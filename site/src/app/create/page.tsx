@@ -1,10 +1,10 @@
-import { CreatePrompt } from "@/components/CreatePrompt";
+import { CreateTabs } from "@/components/CreateTabs";
 import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Create Workflow",
-  description: "Create a new SWEny workflow using AI or the visual editor",
+  description: "Create a new SWEny workflow using AI or the E2E wizard",
 };
 
 export default function CreatePage() {
@@ -33,11 +33,11 @@ export default function CreatePage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold">Create a Workflow</h1>
           <p className="text-gray-400 text-sm mt-1">
-            Describe what you want in plain English. AI generates the workflow,
-            you refine it, then submit to the marketplace.
+            Describe what you want in plain English, or use a guided wizard to
+            build a workflow tailored to your needs.
           </p>
         </div>
-        <CreatePrompt />
+        <CreateTabs />
       </main>
     </div>
   );
