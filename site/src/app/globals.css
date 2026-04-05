@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* Hide React Flow attribution watermark and minimap in DAG viewer */
+.react-flow__attribution,
+.react-flow__minimap {
+  display: none !important;
+}
