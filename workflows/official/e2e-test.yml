@@ -1,0 +1,142 @@
+id: e2e-test
+name: E2E Test Generator
+description: Analyze your application, generate comprehensive end-to-end browser tests, run them, and report results
+author: sweny-ai
+category: testing
+tags: [e2e, testing, browser, playwright, automation]
+icon: play-circle
+color: green
+version: 1.0.0
+sweny_version: ">=4.0.0"
+variables:
+  - name: ANTHROPIC_API_KEY
+    description: Anthropic API key for Claude
+    required: true
+    alternatives:
+      - name: CLAUDE_CODE_OAUTH_TOKEN
+        description: Claude Code OAuth token
+  - name: GITHUB_TOKEN
+    description: GitHub token for repo access
+    required: true
+entry: analyze
+nodes:
+  analyze:
+    name: Analyze Application
+    instruction: >-
+      Analyze the application to understand its structure and identify testable user flows:
+
+      1. Read the project's package.json, framework config, and routing structure.
+      2. Identify the tech stack (Next.js, React, Vue, etc.) and test framework (Playwright, Cypress, etc.).
+      3. Find existing e2e tests to understand patterns and conventions already in use.
+      4. Map out the key user flows: authentication, navigation, forms, CRUD operations,
+         checkout/purchase, onboarding, settings, etc.
+      5. Identify critical paths that have no test coverage.
+
+      Output a structured test plan with prioritized flows to test.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        tech_stack:
+          type: string
+        test_framework:
+          type: string
+        existing_test_count:
+          type: number
+        flows:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              priority:
+                type: string
+                enum: [critical, high, medium, low]
+              steps:
+                type: array
+                items:
+                  type: string
+              has_existing_test:
+                type: boolean
+      required: [tech_stack, test_framework, flows]
+  generate:
+    name: Generate Tests
+    instruction: >-
+      Generate end-to-end tests for the prioritized user flows:
+
+      1. Focus on critical and high priority flows that don't have existing tests.
+      2. Use the project's existing test framework and patterns.
+      3. For each flow, write a complete test file with:
+         - Descriptive test names that explain the user journey.
+         - Page navigation and element interactions using proper selectors.
+         - Assertions that verify both visual state and data correctness.
+         - Proper setup/teardown (login, seed data, cleanup).
+      4. Include negative tests for error states and edge cases.
+      5. Use data-testid attributes where possible for stable selectors.
+      6. Add reasonable timeouts and waits for async operations.
+
+      Write tests that are maintainable and not brittle. Prefer user-visible text
+      and semantic selectors over implementation-dependent CSS classes.
+    skills:
+      - github
+  run:
+    name: Run Tests
+    instruction: >-
+      Execute the generated e2e tests and collect results:
+
+      1. Install test dependencies if needed (playwright install, etc.).
+      2. Run the test suite with verbose output.
+      3. Collect pass/fail results for each test.
+      4. For failures, capture error messages and screenshots if available.
+      5. Calculate overall pass rate.
+
+      If the test framework isn't installed, install it first. If the app needs to be
+      running for tests, start the dev server before running tests.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        total:
+          type: number
+        passed:
+          type: number
+        failed:
+          type: number
+        pass_rate:
+          type: string
+        failures:
+          type: array
+          items:
+            type: object
+            properties:
+              test_name:
+                type: string
+              error:
+                type: string
+      required: [total, passed, failed, pass_rate]
+  report:
+    name: Create Report
+    instruction: >-
+      Create a comprehensive test report and commit the test files:
+
+      1. Commit all generated test files to a new branch.
+      2. Create a pull request with the test files.
+      3. In the PR description, include:
+         - Test coverage summary (X flows covered, Y tests written).
+         - Pass/fail results from the test run.
+         - Details on any failures with suggested fixes.
+         - List of flows that still need manual test coverage.
+      4. If there were test failures, note whether they indicate real bugs
+         or test issues that need fixing.
+    skills:
+      - github
+edges:
+  - from: analyze
+    to: generate
+  - from: generate
+    to: run
+  - from: run
+    to: report

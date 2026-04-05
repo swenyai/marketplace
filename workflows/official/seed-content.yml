@@ -8,6 +8,19 @@ icon: file-text
 color: yellow
 version: 1.0.0
 sweny_version: ">=4.0.0"
+variables:
+  - name: ANTHROPIC_API_KEY
+    description: Anthropic API key for Claude
+    required: true
+    alternatives:
+      - name: CLAUDE_CODE_OAUTH_TOKEN
+        description: Claude Code OAuth token
+  - name: SUPABASE_URL
+    description: Supabase project URL
+    required: true
+  - name: SUPABASE_SERVICE_KEY
+    description: Supabase service role key
+    required: true
 entry: audit
 nodes:
   audit:

@@ -1,5 +1,12 @@
 import type { Workflow } from "@sweny-ai/core";
 
+export interface WorkflowVariable {
+  name: string;
+  description: string;
+  required?: boolean;
+  alternatives?: { name: string; description: string }[];
+}
+
 export interface MarketplaceMetadata {
   author: string;
   category: Category;
@@ -8,6 +15,7 @@ export interface MarketplaceMetadata {
   color?: CardColor;
   version: string;
   sweny_version?: string;
+  variables?: WorkflowVariable[];
 }
 
 export type Category =

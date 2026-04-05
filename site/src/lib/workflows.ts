@@ -37,6 +37,7 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
         color: parsed.color as CardColor | undefined,
         version: parsed.version ?? "1.0.0",
         sweny_version: parsed.sweny_version,
+        variables: Array.isArray(parsed.variables) ? parsed.variables : undefined,
       };
 
       const allSkills = new Set<string>();
