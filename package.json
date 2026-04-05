@@ -7,5 +7,9 @@
     "build": "cd site && npm run build",
     "validate": "node scripts/validate.mjs",
     "check-ids": "node scripts/check-unique-ids.mjs"
+  },
+  "dependencies": {
+    "@sweny-ai/core": "latest",
+    "yaml": "^2.7.1"
   }
 }

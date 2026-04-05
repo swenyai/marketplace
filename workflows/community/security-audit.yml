@@ -1,0 +1,121 @@
+id: security-audit
+name: Security Audit
+description: Scan project dependencies for known CVEs, check for OWASP top 10 issues in code, generate a security report, and create issues for critical findings
+author: sweny-ai
+category: security
+tags: [security, cve, owasp, dependencies, audit]
+icon: shield
+color: red
+version: 1.0.0
+sweny_version: ">=4.0.0"
+entry: scan-deps
+nodes:
+  scan-deps:
+    name: Scan Dependencies
+    instruction: >-
+      Scan the project's dependency files for known vulnerabilities:
+
+      1. Check package.json / package-lock.json (npm), requirements.txt / poetry.lock (Python),
+         go.sum (Go), Gemfile.lock (Ruby), or any other dependency manifest.
+      2. For each dependency, search for known CVEs using GitHub Advisory Database.
+      3. Categorize findings by severity: critical, high, medium, low.
+      4. Note which dependencies have available patches or upgrades.
+
+      Output a structured list of vulnerable dependencies with CVE IDs, severity, and fix availability.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        vulnerabilities:
+          type: array
+          items:
+            type: object
+            properties:
+              package:
+                type: string
+              version:
+                type: string
+              cve:
+                type: string
+              severity:
+                type: string
+                enum: [critical, high, medium, low]
+              fix_available:
+                type: boolean
+              fixed_version:
+                type: string
+        critical_count:
+          type: number
+        high_count:
+          type: number
+      required: [vulnerabilities, critical_count, high_count]
+  scan-code:
+    name: Code Security Review
+    instruction: >-
+      Review the codebase for common security anti-patterns (OWASP Top 10):
+
+      1. Search for SQL injection patterns (string concatenation in queries).
+      2. Check for XSS vulnerabilities (unsanitized user input in templates/responses).
+      3. Look for hardcoded secrets, API keys, or credentials in source files.
+      4. Check for insecure deserialization, path traversal, and command injection.
+      5. Review authentication and authorization patterns for weaknesses.
+
+      Focus on the most critical files: API routes, auth middleware, database queries, and user input handlers.
+      Be specific about file paths and line numbers for each finding.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              severity:
+                type: string
+                enum: [critical, high, medium, low]
+              file:
+                type: string
+              description:
+                type: string
+              recommendation:
+                type: string
+        total_findings:
+          type: number
+      required: [findings, total_findings]
+  create-report:
+    name: Generate Security Report
+    instruction: >-
+      Combine the dependency scan and code review results into a comprehensive security report:
+
+      1. Executive summary with overall risk level.
+      2. Critical and high findings listed first with remediation steps.
+      3. Dependency vulnerabilities with upgrade paths.
+      4. Code-level findings with specific fix recommendations.
+      5. Prioritized action items.
+
+      Create a GitHub issue with the full report. If critical findings exist, label the issue as urgent.
+    skills:
+      - github
+  notify:
+    name: Notify Team
+    instruction: >-
+      Send a notification with the security audit summary:
+
+      1. Include the overall risk level and count of findings by severity.
+      2. Highlight any critical findings that need immediate attention.
+      3. Link to the full security report issue.
+    skills:
+      - slack
+      - notification
+edges:
+  - from: scan-deps
+    to: scan-code
+  - from: scan-code
+    to: create-report
+  - from: create-report
+    to: notify

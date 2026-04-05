@@ -26,7 +26,8 @@ export type CardColor =
   | "orange"
   | "green"
   | "yellow"
-  | "cyan";
+  | "cyan"
+  | "amber";
 
 export interface MarketplaceWorkflow extends Workflow, MarketplaceMetadata {
   source: "official" | "community";
@@ -57,4 +58,5 @@ export const COLOR_MAP: Record<CardColor, { bg: string; border: string; text: st
   green: { bg: "bg-green-950/50", border: "border-green-800", text: "text-green-400" },
   yellow: { bg: "bg-yellow-950/50", border: "border-yellow-800", text: "text-yellow-400" },
   cyan: { bg: "bg-cyan-950/50", border: "border-cyan-800", text: "text-cyan-400" },
+  amber: { bg: "bg-amber-950/50", border: "border-amber-800", text: "text-amber-400" },
 };

@@ -1,0 +1,109 @@
+id: pr-review-bot
+name: PR Review Bot
+description: Automatically review pull requests for code style violations, missing tests, documentation gaps, and breaking API changes
+author: sweny-ai
+category: code-review
+tags: [code-review, pull-request, testing, documentation, api]
+icon: eye
+color: purple
+version: 1.0.0
+sweny_version: ">=4.0.0"
+entry: fetch-pr
+nodes:
+  fetch-pr:
+    name: Fetch PR Details
+    instruction: >-
+      Fetch the pull request details and changed files:
+
+      1. Get the PR diff, changed file list, and PR description.
+      2. Identify the type of change: feature, bugfix, refactor, docs, test, etc.
+      3. Note the number of files changed and lines added/removed.
+      4. Check if the PR has a description and linked issues.
+
+      Output the PR context for downstream review steps.
+    skills:
+      - github
+  review-style:
+    name: Code Style Review
+    instruction: >-
+      Review the changed code for style and quality issues:
+
+      1. Check for consistent naming conventions (camelCase, snake_case, etc.).
+      2. Look for overly complex functions (deeply nested, too many parameters).
+      3. Check for dead code, unused imports, or commented-out code.
+      4. Verify error handling is present where needed.
+      5. Check for magic numbers or hardcoded strings that should be constants.
+
+      Be constructive, not nitpicky. Focus on issues that matter for maintainability.
+    skills:
+      - github
+  review-tests:
+    name: Test Coverage Review
+    instruction: >-
+      Evaluate the test coverage of the changes:
+
+      1. Check if new functions/methods have corresponding tests.
+      2. Verify edge cases are covered (null inputs, empty arrays, error paths).
+      3. Check if existing tests were updated when behavior changed.
+      4. Look for test anti-patterns (mocking everything, testing implementation details).
+
+      If tests are missing, suggest specific test cases that should be added.
+    skills:
+      - github
+  review-breaking:
+    name: Breaking Change Detection
+    instruction: >-
+      Check for breaking changes in the PR:
+
+      1. Look for modified public API signatures (function parameters, return types).
+      2. Check for renamed or removed exports.
+      3. Verify database migration safety (column renames, type changes, drops).
+      4. Check for changes to configuration formats or environment variables.
+
+      If breaking changes are found, note whether they're documented in the PR description.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        has_breaking_changes:
+          type: boolean
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              description:
+                type: string
+              file:
+                type: string
+      required: [has_breaking_changes, changes]
+  post-review:
+    name: Post Review Comment
+    instruction: >-
+      Compile all review findings into a single PR comment:
+
+      1. Start with a summary: overall impression, risk level, and recommendation (approve, request changes, or comment).
+      2. Group findings by category: Style, Tests, Breaking Changes.
+      3. Use GitHub suggestion blocks for concrete code fixes where appropriate.
+      4. Be constructive and encouraging — highlight what was done well too.
+      5. If there are breaking changes, explicitly flag them.
+
+      Post the review as a PR comment. If critical issues were found, request changes.
+    skills:
+      - github
+edges:
+  - from: fetch-pr
+    to: review-style
+  - from: fetch-pr
+    to: review-tests
+  - from: fetch-pr
+    to: review-breaking
+  - from: review-style
+    to: post-review
+  - from: review-tests
+    to: post-review
+  - from: review-breaking
+    to: post-review

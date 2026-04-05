@@ -1,0 +1,114 @@
+id: deploy-guard
+name: Deploy Guard
+description: Run pre-deployment checks including database migration safety, environment variable drift detection, and rollback readiness verification
+author: sweny-ai
+category: devops
+tags: [deployment, migrations, environment, rollback, safety]
+icon: shield-check
+color: amber
+version: 1.0.0
+sweny_version: ">=4.0.0"
+entry: check-migrations
+nodes:
+  check-migrations:
+    name: Migration Safety Check
+    instruction: >-
+      Review pending database migrations for safety:
+
+      1. Find all migration files that haven't been applied to production.
+      2. Check for dangerous operations: DROP TABLE, DROP COLUMN, column type changes,
+         removing NOT NULL constraints, renaming columns.
+      3. Verify each migration has a corresponding rollback/down migration.
+      4. Check for data migrations that might be slow on large tables (full table scans, large updates).
+      5. Verify migrations can run without downtime (no table locks on hot tables).
+
+      Flag any migration that could cause data loss or extended downtime.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        migrations:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              risk_level:
+                type: string
+                enum: [safe, caution, dangerous]
+              issues:
+                type: array
+                items:
+                  type: string
+        has_dangerous:
+          type: boolean
+      required: [migrations, has_dangerous]
+  check-env:
+    name: Environment Variable Drift
+    instruction: >-
+      Check for environment variable drift between the codebase and deployment:
+
+      1. Scan source code for all referenced environment variables (process.env.*, os.environ, etc.).
+      2. Compare against .env.example, .env.template, or documented env vars.
+      3. Identify new env vars that might be missing from production config.
+      4. Check for removed env vars that are still set in production.
+      5. Verify no secrets are hardcoded or committed to the repo.
+
+      Output a list of env var discrepancies that need attention before deploy.
+    skills:
+      - github
+  check-rollback:
+    name: Rollback Readiness
+    instruction: >-
+      Verify the deployment can be safely rolled back:
+
+      1. Check if the changes are backward-compatible with the previous version.
+      2. Verify API changes won't break existing clients during rollback.
+      3. Check if database migrations are reversible.
+      4. Verify feature flags are in place for risky features.
+      5. Check that health check endpoints will work correctly after rollback.
+
+      Assess overall rollback risk: low, medium, or high.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        rollback_risk:
+          type: string
+          enum: [low, medium, high]
+        concerns:
+          type: array
+          items:
+            type: string
+        recommendation:
+          type: string
+      required: [rollback_risk, recommendation]
+  report:
+    name: Deploy Readiness Report
+    instruction: >-
+      Compile all pre-deployment checks into a deploy readiness report:
+
+      1. Overall deploy readiness: GO, CAUTION, or NO-GO.
+      2. Migration safety summary with specific risks.
+      3. Environment variable drift findings.
+      4. Rollback readiness assessment.
+      5. Recommended actions before deploying.
+
+      If the result is NO-GO, create a GitHub issue with the blocking concerns.
+      Send a notification with the readiness summary.
+    skills:
+      - github
+      - slack
+      - notification
+edges:
+  - from: check-migrations
+    to: check-env
+  - from: check-migrations
+    to: check-rollback
+  - from: check-env
+    to: report
+  - from: check-rollback
+    to: report

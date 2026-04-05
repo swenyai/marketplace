@@ -1,0 +1,94 @@
+id: test-coverage-check
+name: Test Coverage Check
+description: Analyze test coverage across the codebase, identify untested critical paths, and generate test stubs for uncovered functions
+author: sweny-ai
+category: testing
+tags: [testing, coverage, test-generation, quality]
+icon: check-circle
+color: green
+version: 1.0.0
+sweny_version: ">=4.0.0"
+entry: analyze-coverage
+nodes:
+  analyze-coverage:
+    name: Analyze Test Coverage
+    instruction: >-
+      Analyze the codebase to identify test coverage gaps:
+
+      1. Find all source files and their corresponding test files.
+      2. For files without tests, note them as completely untested.
+      3. For files with tests, check which exported functions/methods have test coverage.
+      4. Identify critical paths that lack coverage: API handlers, auth middleware,
+         data validation, business logic, error handling.
+      5. Prioritize gaps by risk: untested auth code > untested utils.
+
+      Output a structured report of coverage gaps sorted by priority.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        untested_files:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              priority:
+                type: string
+                enum: [critical, high, medium, low]
+              exported_functions:
+                type: array
+                items:
+                  type: string
+        partially_tested:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              test_file:
+                type: string
+              untested_functions:
+                type: array
+                items:
+                  type: string
+        coverage_summary:
+          type: string
+      required: [untested_files, partially_tested, coverage_summary]
+  generate-stubs:
+    name: Generate Test Stubs
+    instruction: >-
+      Generate test stubs for the highest-priority untested code:
+
+      1. Focus on critical and high priority gaps from the analysis.
+      2. For each untested function, create a test file with:
+         - Import statements for the function under test.
+         - Describe block with the function name.
+         - Test cases for: happy path, edge cases, error handling.
+         - Placeholder assertions with TODO comments explaining what to verify.
+      3. Follow the project's existing test patterns (Jest, Vitest, pytest, etc.).
+      4. Include setup/teardown if the function has side effects.
+
+      Create the test files in the appropriate test directory.
+    skills:
+      - github
+  create-issue:
+    name: Create Coverage Issue
+    instruction: >-
+      Create a GitHub issue summarizing the test coverage analysis:
+
+      1. Include the coverage summary statistics.
+      2. List the critical untested paths that need immediate attention.
+      3. Link to any generated test stubs as a starting point.
+      4. Include a prioritized checklist of test files to write.
+      5. Add labels: testing, quality, good-first-issue (for simple test additions).
+    skills:
+      - github
+edges:
+  - from: analyze-coverage
+    to: generate-stubs
+  - from: generate-stubs
+    to: create-issue
