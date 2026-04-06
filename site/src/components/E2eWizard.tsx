@@ -402,32 +402,75 @@ export function E2eWizard() {
               </div>
             </div>
 
-            {!yaml && !generating && (
+            {/* Generate button — always visible; disabled while generating */}
+            {!yaml && (
               <button
                 onClick={generate}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+                disabled={generating}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
               >
-                Generate E2E Workflow
+                {generating ? (
+                  <>
+                    <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                    <span>Generating workflow...</span>
+                  </>
+                ) : (
+                  "Generate E2E Workflow"
+                )}
               </button>
             )}
 
-            {generating && (
-              <div className="text-xs text-gray-500 animate-pulse">
-                Generating your workflow...
+            {/* Error display — shows regardless of valid state */}
+            {errors.length > 0 && (
+              <div className="bg-red-950/30 border border-red-900/50 rounded-lg p-3 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-red-400 font-medium">
+                  <span>Generation failed</span>
+                </div>
+                <ul className="text-xs text-red-300/80 space-y-0.5 list-disc list-inside">
+                  {errors.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+                <button
+                  onClick={generate}
+                  disabled={generating}
+                  className="text-xs bg-red-950/50 hover:bg-red-900/50 border border-red-800 text-red-300 px-3 py-1.5 rounded transition mt-1"
+                >
+                  Retry
+                </button>
               </div>
             )}
 
-            {valid !== null && (
-              <div
-                className={`text-xs px-3 py-2 rounded-lg ${
-                  valid
-                    ? "bg-green-950/30 text-green-400 border border-green-900/50"
-                    : "bg-red-950/30 text-red-400 border border-red-900/50"
-                }`}
-              >
-                {valid
-                  ? "Workflow is valid"
-                  : `Validation errors: ${errors.join(", ")}`}
+            {/* Success banner when valid */}
+            {valid === true && errors.length === 0 && (
+              <div className="bg-green-950/30 border border-green-900/50 rounded-lg px-3 py-2 text-xs text-green-400">
+                Workflow is valid
+              </div>
+            )}
+
+            {/* Streaming status + regenerate button while yaml is present */}
+            {yaml && (
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs text-gray-500 flex items-center gap-2">
+                  {generating ? (
+                    <>
+                      <span className="w-3 h-3 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+                      <span>Streaming workflow...</span>
+                    </>
+                  ) : valid === true ? (
+                    <span>Generation complete</span>
+                  ) : valid === false ? (
+                    <span className="text-red-400">Generation finished with errors</span>
+                  ) : null}
+                </div>
+                {!generating && (
+                  <button
+                    onClick={generate}
+                    className="text-xs text-gray-500 hover:text-gray-300 border border-[#2a2a3a] hover:border-gray-600 px-3 py-1.5 rounded transition"
+                  >
+                    Regenerate
+                  </button>
+                )}
               </div>
             )}
 
@@ -446,14 +489,19 @@ export function E2eWizard() {
           </div>
 
           {/* Live DAG */}
-          <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl overflow-hidden">
+          <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl overflow-hidden min-h-[400px]">
             {workflow ? (
               <DagViewer workflow={workflow} height="100%" />
             ) : (
-              <div className="flex items-center justify-center h-full min-h-[400px] text-gray-600 text-sm">
-                {generating
-                  ? "Building DAG..."
-                  : "DAG preview will appear here"}
+              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-600 text-sm gap-3 p-6 text-center">
+                {generating ? (
+                  <>
+                    <span className="w-6 h-6 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+                    <span>Building DAG from streaming workflow...</span>
+                  </>
+                ) : (
+                  <span>DAG preview will appear here</span>
+                )}
               </div>
             )}
           </div>
