@@ -16,9 +16,20 @@
   font-size: 11px !important;
 }
 
+@media (max-width: 768px) {
+  .marketplace-dag .react-flow__node {
+    font-size: 10px !important;
+  }
+}
+
 /* Compact edge labels */
 .marketplace-dag .react-flow__edge-text {
   font-size: 9px !important;
+}
+
+/* Prevent horizontal overflow on the page from DAG panning */
+.marketplace-dag {
+  touch-action: pan-y pinch-zoom;
 }
 
 .marketplace-dag .react-flow__edge-textbg {

@@ -48,7 +48,7 @@ export function WorkflowGrid({ workflows }: WorkflowGridProps) {
             placeholder='Search workflows... (e.g. "security", "triage", "code review")'
             className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
           />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 bg-[#1a1a2e] px-1.5 py-0.5 rounded border border-[#2a2a3a]">
+          <kbd className="hidden md:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 bg-[#1a1a2e] px-1.5 py-0.5 rounded border border-[#2a2a3a]">
             \u2318K
           </kbd>
         </div>
@@ -56,10 +56,14 @@ export function WorkflowGrid({ workflows }: WorkflowGridProps) {
       </div>
 
       {/* Grid + Detail */}
-      <div className={`grid gap-6 ${selected ? "grid-cols-2" : "grid-cols-1"}`}>
+      <div className={`grid gap-4 md:gap-6 ${selected ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
         {/* Cards */}
         <div
-          className={`grid gap-3 ${selected ? "grid-cols-2" : "grid-cols-3 lg:grid-cols-4"} auto-rows-max`}
+          className={`grid gap-3 auto-rows-max ${
+            selected
+              ? "grid-cols-1 sm:grid-cols-2"
+              : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+          }`}
         >
           {filtered.map((w) => (
             <WorkflowCard
@@ -78,7 +82,7 @@ export function WorkflowGrid({ workflows }: WorkflowGridProps) {
 
         {/* Detail panel */}
         {selected && (
-          <div className="bg-[#0c0c14] rounded-xl border border-[#1e1e2e] p-6 overflow-y-auto max-h-[calc(100vh-200px)] sticky top-24">
+          <div className="bg-[#0c0c14] rounded-xl border border-[#1e1e2e] p-4 md:p-6 overflow-y-auto lg:max-h-[calc(100vh-200px)] lg:sticky lg:top-24">
             <WorkflowDetail workflow={selected} />
           </div>
         )}

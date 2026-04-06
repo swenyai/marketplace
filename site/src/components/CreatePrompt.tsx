@@ -128,7 +128,7 @@ export function CreatePrompt() {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[calc(100vh-120px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 lg:min-h-[calc(100vh-120px)]">
       {/* Left: Prompt + YAML output */}
       <div className="space-y-4">
         <form onSubmit={handleSubmit}>

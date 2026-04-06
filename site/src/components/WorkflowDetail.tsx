@@ -54,13 +54,13 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
     <div>
       {/* Header */}
       <div className="mb-4">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
           <div
-            className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white ${colors.bg} ${colors.border} border`}
+            className={`w-6 h-6 rounded flex items-center justify-center text-xs font-bold text-white ${colors.bg} ${colors.border} border flex-shrink-0`}
           >
             {workflow.name[0]}
           </div>
-          <h2 className="text-xl font-bold text-gray-100">{workflow.name}</h2>
+          <h2 className="text-lg md:text-xl font-bold text-gray-100 min-w-0 break-words">{workflow.name}</h2>
           <span
             className={`text-[10px] font-medium px-2 py-0.5 rounded ${
               workflow.source === "official"
@@ -71,13 +71,13 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
             {workflow.source === "official" ? "OFFICIAL" : "COMMUNITY"}
           </span>
         </div>
-        <p className="text-sm text-gray-400 leading-relaxed">
+        <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
           {workflow.description}
         </p>
       </div>
 
       {/* Meta bar */}
-      <div className="flex gap-4 items-center mb-4 px-3 py-2 bg-[#111] rounded-lg border border-[#1e1e2e] text-xs text-gray-500">
+      <div className="flex gap-2 md:gap-4 items-center mb-4 px-3 py-2 bg-[#111] rounded-lg border border-[#1e1e2e] text-[11px] md:text-xs text-gray-500 flex-wrap">
         <div className="flex items-center gap-1.5">
           <div className="w-4 h-4 rounded-full bg-gray-700" />
           <span>{workflow.author}</span>
@@ -92,16 +92,21 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
 
       {/* Interactive DAG */}
       <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl mb-4 overflow-hidden marketplace-dag">
-        <DagViewer workflow={coreWorkflow} height={500} nodeWidth={200} nodeHeight={70} />
+        <div className="block md:hidden">
+          <DagViewer workflow={coreWorkflow} height={320} nodeWidth={160} nodeHeight={60} />
+        </div>
+        <div className="hidden md:block">
+          <DagViewer workflow={coreWorkflow} height={500} nodeWidth={200} nodeHeight={70} />
+        </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1e1e2e] mb-4">
+      <div className="flex border-b border-[#1e1e2e] mb-4 overflow-x-auto">
         {(["skills", "yaml", "usage"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 text-xs font-medium transition ${
+            className={`px-3 md:px-4 py-3 md:py-2 text-xs font-medium transition whitespace-nowrap ${
               tab === t
                 ? "text-blue-400 border-b-2 border-blue-500"
                 : "text-gray-500 hover:text-gray-300"
@@ -114,14 +119,14 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
 
       {/* Tab content */}
       {tab === "skills" && (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {[...skillNodes.entries()].map(([skill, nodes]) => (
             <div key={skill} className="bg-[#111] border border-[#1e1e2e] rounded-lg p-2.5">
               <div className="flex items-center gap-1.5 mb-1">
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                 <span className="text-xs text-gray-200 font-medium capitalize">{skill}</span>
               </div>
-              <span className="text-[10px] text-gray-600">Used in: {nodes.join(", ")}</span>
+              <span className="text-[10px] text-gray-600 break-words">Used in: {nodes.join(", ")}</span>
             </div>
           ))}
         </div>
@@ -130,16 +135,16 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
       {tab === "usage" && <UsageSnippet workflow={workflow} />}
 
       {/* Actions */}
-      <div className="flex gap-2 mt-4">
+      <div className="flex flex-col sm:flex-row gap-2 mt-4">
         <button
           onClick={() => setTab("usage")}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium transition"
         >
           Use This Workflow
         </button>
         <a
           href={`/create?fork=${workflow.id}`}
-          className="flex-1 bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-2.5 rounded-lg text-sm font-medium text-center transition"
+          className="flex-1 bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium text-center transition"
         >
           Fork & Edit
         </a>
@@ -147,7 +152,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
           href={`https://github.com/swenyai/marketplace/blob/main/${workflow.filePath}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-3 py-2.5 rounded-lg text-sm transition"
+          className="bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm text-center transition"
         >
           GitHub
         </a>

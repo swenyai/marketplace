@@ -243,9 +243,9 @@ export function E2eWizard() {
       </div>
 
       {/* Progress */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 md:gap-2 flex-wrap">
         {steps.map((s, i) => (
-          <div key={s} className="flex items-center gap-2">
+          <div key={s} className="flex items-center gap-1.5 md:gap-2">
             <button
               onClick={() => i <= stepIndex && setStep(s)}
               className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition ${
@@ -258,14 +258,14 @@ export function E2eWizard() {
             </button>
             {i < steps.length - 1 && (
               <div
-                className={`w-8 h-0.5 ${
+                className={`w-4 md:w-8 h-0.5 ${
                   i < stepIndex ? "bg-blue-600" : "bg-[#1a1a2e]"
                 }`}
               />
             )}
           </div>
         ))}
-        <span className="text-xs text-gray-600 ml-2">
+        <span className="text-xs text-gray-600 ml-1 md:ml-2">
           {step === "backend"
             ? "Backend"
             : step === "flows"
@@ -285,7 +285,7 @@ export function E2eWizard() {
           <p className="text-xs text-gray-600">
             This determines how test data is provisioned and cleaned up.
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {BACKENDS.map((b) => (
               <button
                 key={b.id}

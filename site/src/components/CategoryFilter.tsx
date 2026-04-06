@@ -9,10 +9,10 @@ interface CategoryFilterProps {
 
 export function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-1.5 md:gap-2 flex-wrap">
       <button
         onClick={() => onChange(null)}
-        className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+        className={`px-3.5 py-2 md:py-1.5 rounded-full text-xs font-medium transition ${
           selected === null
             ? "bg-blue-600 text-white"
             : "bg-[#111] text-gray-400 border border-[#2a2a3a] hover:border-gray-600"
@@ -25,7 +25,7 @@ export function CategoryFilter({ selected, onChange }: CategoryFilterProps) {
           <button
             key={key}
             onClick={() => onChange(selected === key ? null : key)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
+            className={`px-3.5 py-2 md:py-1.5 rounded-full text-xs font-medium transition ${
               selected === key
                 ? "bg-blue-600 text-white"
                 : "bg-[#111] text-gray-400 border border-[#2a2a3a] hover:border-gray-600"
