@@ -353,7 +353,7 @@ export function E2eWizard() {
               <input
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
-                placeholder="e.g. KidMath, Offload, MyApp"
+                placeholder="e.g. MyApp, Acme Dashboard"
                 className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
               />
             </div>
