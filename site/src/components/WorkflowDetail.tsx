@@ -91,8 +91,8 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
       </div>
 
       {/* Interactive DAG */}
-      <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl mb-4 overflow-hidden">
-        <DagViewer workflow={coreWorkflow} height={280} />
+      <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl mb-4 overflow-hidden marketplace-dag">
+        <DagViewer workflow={coreWorkflow} height={500} nodeWidth={200} nodeHeight={70} />
       </div>
 
       {/* Tabs */}

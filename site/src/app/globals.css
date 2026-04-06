@@ -5,3 +5,29 @@
 .react-flow__minimap {
   display: none !important;
 }
+
+/* Compact DAG in marketplace: scale the entire viewport down uniformly */
+.marketplace-dag .react-flow__viewport {
+  transform-origin: 0 0;
+}
+
+/* Tighter text in nodes */
+.marketplace-dag .react-flow__node {
+  font-size: 11px !important;
+}
+
+/* Compact edge labels */
+.marketplace-dag .react-flow__edge-text {
+  font-size: 9px !important;
+}
+
+.marketplace-dag .react-flow__edge-textbg {
+  rx: 4;
+  ry: 4;
+}
+
+/* Smaller controls */
+.marketplace-dag .react-flow__controls {
+  transform: scale(0.85);
+  transform-origin: bottom left;
+}
