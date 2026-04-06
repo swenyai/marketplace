@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   const { prompt, existingWorkflow } = await request.json();
-  if (!prompt || typeof prompt !== "string" || prompt.length > 2000) {
+  if (!prompt || typeof prompt !== "string" || prompt.length > 8000) {
     return Response.json({ error: "Invalid prompt" }, { status: 400 });
   }
 
