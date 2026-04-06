@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { parse, stringify } from "yaml";
+import { parse } from "yaml";
 import { YamlViewer } from "./YamlViewer";
 import { SubmitFlow } from "./SubmitFlow";
 
@@ -15,40 +15,32 @@ const DagViewer = dynamic(() => import("./DagViewer"), {
   ),
 });
 
-const FRAMEWORKS = [
-  { id: "nextjs", label: "Next.js" },
-  { id: "react", label: "React (CRA/Vite)" },
-  { id: "vue", label: "Vue / Nuxt" },
-  { id: "svelte", label: "SvelteKit" },
-  { id: "express", label: "Express / Node API" },
-  { id: "other", label: "Other" },
-];
-
-const TEST_RUNNERS = [
-  { id: "playwright", label: "Playwright" },
-  { id: "cypress", label: "Cypress" },
+const BACKENDS = [
+  { id: "supabase", label: "Supabase", hint: "Auth Admin API + PostgREST" },
+  { id: "firebase", label: "Firebase", hint: "Admin SDK or REST API" },
+  { id: "postgres", label: "Postgres / REST API", hint: "Direct SQL or custom API" },
+  { id: "none", label: "No backend access", hint: "Test unauthenticated flows only" },
 ];
 
 const FLOWS = [
-  { id: "auth", label: "Authentication (login, signup, logout)" },
-  { id: "crud", label: "CRUD operations (create, read, update, delete)" },
-  { id: "navigation", label: "Navigation & routing" },
-  { id: "forms", label: "Form validation & submission" },
-  { id: "checkout", label: "Checkout / payments" },
-  { id: "onboarding", label: "User onboarding" },
-  { id: "search", label: "Search & filtering" },
-  { id: "settings", label: "User settings / profile" },
-  { id: "notifications", label: "Notifications & alerts" },
-  { id: "api", label: "API integration / data loading" },
+  { id: "auth", label: "Sign up / Sign in / Sign out" },
+  { id: "onboarding", label: "Onboarding / Setup wizard" },
+  { id: "purchase", label: "Checkout / Payment / Subscription" },
+  { id: "crud", label: "Create, edit, delete content" },
+  { id: "navigation", label: "Navigation / Routing" },
+  { id: "search", label: "Search / Filtering" },
+  { id: "settings", label: "Settings / Profile" },
+  { id: "invite", label: "Invite / Team management" },
 ];
 
-type Step = "framework" | "runner" | "flows" | "review";
+type Step = "backend" | "flows" | "details" | "review";
 
 export function E2eWizard() {
-  const [step, setStep] = useState<Step>("framework");
-  const [framework, setFramework] = useState<string>("");
-  const [runner, setRunner] = useState<string>("playwright");
+  const [step, setStep] = useState<Step>("backend");
+  const [backend, setBackend] = useState("");
   const [selectedFlows, setSelectedFlows] = useState<string[]>([]);
+  const [appUrl, setAppUrl] = useState("");
+  const [appName, setAppName] = useState("");
   const [generating, setGenerating] = useState(false);
   const [yaml, setYaml] = useState("");
   const [valid, setValid] = useState<boolean | null>(null);
@@ -88,25 +80,81 @@ export function E2eWizard() {
       .map((id) => FLOWS.find((f) => f.id === id)?.label)
       .filter(Boolean);
 
-    const frameworkLabel =
-      FRAMEWORKS.find((f) => f.id === framework)?.label ?? framework;
+    const backendLabel = BACKENDS.find((b) => b.id === backend)?.label ?? backend;
 
     const prompt = [
-      `Create an e2e testing workflow for a ${frameworkLabel} application using ${runner}.`,
+      `Create an E2E UAT workflow for "${appName || "my app"}" at ${appUrl || "https://myapp.com"} using the agent-browser pattern.`,
       "",
-      "The workflow should cover these user flows:",
+      "CRITICAL: This uses the agent-browser CLI for browser automation — NOT Playwright, NOT Cypress, NO test framework code.",
+      "The agent drives a real browser via accessibility tree (@ref element IDs), not CSS selectors.",
+      "",
+      "## Required node structure",
+      "",
+      "Every workflow MUST have exactly these node types:",
+      "",
+      "### setup node (copy verbatim)",
+      "- Start agent-browser daemon in background",
+      "- Poll for readiness with `agent-browser get url` (30s timeout)",
+      "- Close stale sessions: `agent-browser close --all`",
+      "- List all available commands: open, snapshot, click, fill, press, get url, screenshot, scroll, scrollintoview, select, keyboard type",
+      "- skills: [] (no skills — agent uses shell commands)",
+      "- Output: status (ready|fail)",
+      "",
+      `### provision node (${backendLabel} backend)`,
+      "- Read env vars ($E2E_BASE_URL, backend credentials)",
+      "- Generate unique test credentials: e2e-{timestamp}@yourapp.test",
+      "- Clean up stale test data from prior crashed runs",
+      "- Create fresh test data via backend admin API",
+      backend === "supabase"
+        ? "- Use Supabase Auth Admin API for users, PostgREST for table data. Env vars: $SUPABASE_URL, $SUPABASE_SERVICE_ROLE_KEY"
+        : backend === "firebase"
+          ? "- Use Firebase Admin REST API. Env vars: $FIREBASE_PROJECT_ID, $FIREBASE_API_KEY"
+          : backend === "postgres"
+            ? "- Use custom REST API or direct database calls. Env vars: $API_URL, $API_KEY"
+            : "- No backend provisioning needed, skip to test nodes",
+      "- Output: status, base_url, run_id, test_email, test_password, user_id",
+      "- skills: []",
+      "",
+      "### test nodes — one per user flow, natural language instructions",
+      "Each test node MUST:",
+      "- Reference values from provision output ('Use the test_email from the provision step')",
+      "- Use numbered steps with specific agent-browser commands",
+      "- Navigate with: agent-browser open <URL>",
+      "- Read the page with: agent-browser snapshot (returns @ref IDs)",
+      "- Interact with: agent-browser click @ref, agent-browser fill @ref 'text'",
+      "- Define success/failure: check URL or snapshot content",
+      "- Take screenshot: agent-browser screenshot results/<name>.png",
+      "- Output: status (pass|fail), error",
+      "- skills: [] (NO skills — the agent uses shell commands)",
+      "",
+      "User flows to test:",
       ...flowLabels.map((f) => `- ${f}`),
       "",
-      "Structure the workflow with these nodes:",
-      "1. analyze — Read the codebase to understand routing, components, and existing tests",
-      "2. One node per user flow group — generate tests for that specific flow",
-      "3. run-tests — Execute all generated tests and collect results",
-      "4. report — Create a PR with the test files and a summary of results",
+      "### cleanup node",
+      "- Delete all test data matching e2e-* convention",
+      "- Must run on BOTH success AND failure paths",
+      "- Skip gracefully if credentials missing",
+      "- skills: []",
       "",
-      `Use ${runner} patterns and best practices. Generate real, runnable test code in the instructions.`,
-      "Each test generation node should produce a complete test file.",
-      `The workflow id should be 'e2e-${framework}'.`,
+      "### report node",
+      "- Compile pass/fail from all test nodes",
+      "- One-sentence summary",
+      "- Output: total, passed, failed, summary",
+      "- skills: []",
+      "",
+      "## Edge routing (CRITICAL)",
+      "Happy path: setup → provision → test_a → test_b → ... → cleanup → report",
+      "Each node's failure edge goes to cleanup (never skip cleanup):",
+      "- setup fail → report (nothing to clean up)",
+      "- provision fail → cleanup",
+      "- any test fail → cleanup",
+      "",
+      `Set the workflow id to 'e2e-${(appName || "my-app").toLowerCase().replace(/[^a-z0-9]/g, "-")}'.`,
       "Set author to 'community', category to 'testing'.",
+      "Set all skills to empty arrays: skills: []",
+      "",
+      "IMPORTANT: Do NOT use Playwright, Cypress, or any test framework. Do NOT generate test code.",
+      "The agent executes natural language instructions against agent-browser. That's the whole point.",
     ].join("\n");
 
     try {
@@ -157,25 +205,40 @@ export function E2eWizard() {
     } finally {
       setGenerating(false);
     }
-  }, [framework, runner, selectedFlows]);
+  }, [backend, selectedFlows, appUrl, appName]);
 
-  const steps: Step[] = ["framework", "runner", "flows", "review"];
+  const steps: Step[] = ["backend", "flows", "details", "review"];
   const stepIndex = steps.indexOf(step);
 
   return (
     <div className="space-y-6">
       {/* CLI callout */}
       <div className="bg-blue-950/20 border border-blue-900/40 rounded-lg px-4 py-3 text-sm">
-        <p className="text-blue-300 font-medium mb-1">Best results? Use the CLI.</p>
+        <p className="text-blue-300 font-medium mb-1">
+          Best results? Use the CLI.
+        </p>
         <p className="text-blue-400/70 text-xs leading-relaxed">
           Run{" "}
           <code className="bg-blue-950/50 px-1.5 py-0.5 rounded text-blue-300">
             sweny e2e init
           </code>{" "}
           in your project directory. It analyzes your actual codebase — routes,
-          components, auth patterns — and generates a workflow that fits your app
-          perfectly. This wizard is a great starting point, but the CLI is where
-          the magic happens.
+          auth patterns, API endpoints — and generates a workflow that fits your
+          app perfectly. This wizard gives you a solid starting point, but the
+          CLI can inspect your code and make proper inferences.
+        </p>
+      </div>
+
+      {/* How it works */}
+      <div className="bg-[#111] border border-[#1e1e2e] rounded-lg px-4 py-3">
+        <p className="text-xs text-gray-400 leading-relaxed">
+          <span className="text-gray-300 font-medium">How it works:</span>{" "}
+          An AI agent drives a real browser via{" "}
+          <code className="text-gray-300">agent-browser</code> — no
+          Playwright, no Cypress, no selectors. The agent reads the accessibility
+          tree, clicks buttons by their labels, fills forms by their placeholders,
+          and adapts when your UI changes. Each test is natural language, not
+          code. ~$0.10/run.
         </p>
       </div>
 
@@ -203,74 +266,56 @@ export function E2eWizard() {
           </div>
         ))}
         <span className="text-xs text-gray-600 ml-2">
-          {step === "framework"
-            ? "Tech Stack"
-            : step === "runner"
-              ? "Test Runner"
-              : step === "flows"
-                ? "User Flows"
+          {step === "backend"
+            ? "Backend"
+            : step === "flows"
+              ? "User Flows"
+              : step === "details"
+                ? "App Details"
                 : "Generate"}
         </span>
       </div>
 
-      {/* Step content */}
-      {step === "framework" && (
+      {/* Step 1: Backend */}
+      {step === "backend" && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-gray-300">
-            What framework does your app use?
+            What backend does your app use?
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {FRAMEWORKS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => {
-                  setFramework(f.id);
-                  setStep("runner");
-                }}
-                className={`text-sm px-4 py-3 rounded-lg border transition text-left ${
-                  framework === f.id
-                    ? "bg-blue-950/50 border-blue-700 text-blue-300"
-                    : "bg-[#111] border-[#2a2a3a] text-gray-400 hover:border-gray-600 hover:text-gray-200"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {step === "runner" && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300">
-            Which test runner?
-          </h3>
+          <p className="text-xs text-gray-600">
+            This determines how test data is provisioned and cleaned up.
+          </p>
           <div className="grid grid-cols-2 gap-2">
-            {TEST_RUNNERS.map((r) => (
+            {BACKENDS.map((b) => (
               <button
-                key={r.id}
+                key={b.id}
                 onClick={() => {
-                  setRunner(r.id);
+                  setBackend(b.id);
                   setStep("flows");
                 }}
-                className={`text-sm px-4 py-3 rounded-lg border transition text-left ${
-                  runner === r.id
+                className={`text-left px-4 py-3 rounded-lg border transition ${
+                  backend === b.id
                     ? "bg-blue-950/50 border-blue-700 text-blue-300"
                     : "bg-[#111] border-[#2a2a3a] text-gray-400 hover:border-gray-600 hover:text-gray-200"
                 }`}
               >
-                {r.label}
+                <div className="text-sm">{b.label}</div>
+                <div className="text-[10px] text-gray-600 mt-0.5">{b.hint}</div>
               </button>
             ))}
           </div>
         </div>
       )}
 
+      {/* Step 2: Flows */}
       {step === "flows" && (
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-gray-300">
             Which user flows should be tested?
           </h3>
+          <p className="text-xs text-gray-600">
+            Each flow becomes a test node — natural language, not code.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {FLOWS.map((f) => (
               <button
@@ -287,33 +332,73 @@ export function E2eWizard() {
             ))}
           </div>
           <button
-            onClick={() => setStep("review")}
+            onClick={() => setStep("details")}
             disabled={selectedFlows.length === 0}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2"
+            className="w-full bg-[#1a1a2e] hover:bg-[#222244] disabled:opacity-50 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2 border border-[#2a2a3a]"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* Step 3: App details */}
+      {step === "details" && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-300">
+            Tell us about your app
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">App name</label>
+              <input
+                value={appName}
+                onChange={(e) => setAppName(e.target.value)}
+                placeholder="e.g. KidMath, Offload, MyApp"
+                className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 mb-1 block">Base URL</label>
+              <input
+                value={appUrl}
+                onChange={(e) => setAppUrl(e.target.value)}
+                placeholder="e.g. https://myapp.com"
+                className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
+              />
+            </div>
+          </div>
+          <button
+            onClick={() => setStep("review")}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2"
           >
             Generate Workflow
           </button>
         </div>
       )}
 
+      {/* Step 4: Review + Generate */}
       {step === "review" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             {/* Summary */}
             <div className="bg-[#111] border border-[#1e1e2e] rounded-lg p-3 space-y-1.5">
               <div className="text-xs text-gray-500">
-                <span className="text-gray-300">Stack:</span>{" "}
-                {FRAMEWORKS.find((f) => f.id === framework)?.label}
+                <span className="text-gray-300">App:</span>{" "}
+                {appName || "My App"} ({appUrl || "https://myapp.com"})
               </div>
               <div className="text-xs text-gray-500">
-                <span className="text-gray-300">Runner:</span>{" "}
-                {TEST_RUNNERS.find((r) => r.id === runner)?.label}
+                <span className="text-gray-300">Backend:</span>{" "}
+                {BACKENDS.find((b) => b.id === backend)?.label}
               </div>
               <div className="text-xs text-gray-500">
                 <span className="text-gray-300">Flows:</span>{" "}
                 {selectedFlows
                   .map((id) => FLOWS.find((f) => f.id === id)?.label)
                   .join(", ")}
+              </div>
+              <div className="text-xs text-gray-500">
+                <span className="text-gray-300">Pattern:</span>{" "}
+                setup → provision → {selectedFlows.length} test(s) → cleanup → report
               </div>
             </div>
 
@@ -322,13 +407,13 @@ export function E2eWizard() {
                 onClick={generate}
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition"
               >
-                Generate Custom E2E Workflow
+                Generate E2E Workflow
               </button>
             )}
 
             {generating && (
               <div className="text-xs text-gray-500 animate-pulse">
-                Generating your custom workflow...
+                Generating your workflow...
               </div>
             )}
 
@@ -350,7 +435,10 @@ export function E2eWizard() {
 
             {valid && yaml && (
               <SubmitFlow
-                workflowId={workflow?.id ?? `e2e-${framework}`}
+                workflowId={
+                  workflow?.id ??
+                  `e2e-${(appName || "my-app").toLowerCase().replace(/[^a-z0-9]/g, "-")}`
+                }
                 workflowYaml={yaml}
                 workflowName={workflow?.name ?? "E2E Test Workflow"}
               />
