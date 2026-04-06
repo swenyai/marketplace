@@ -5,7 +5,9 @@ import dynamic from "next/dynamic";
 import { parse } from "yaml";
 import { YamlViewer } from "./YamlViewer";
 import { SubmitFlow } from "./SubmitFlow";
+import { DagBoundary } from "./DagBoundary";
 import { buildE2ePrompt, slugify } from "./e2e-prompt";
+import { normalizeWorkflow } from "@/lib/normalize-workflow";
 
 const DagViewer = dynamic(() => import("./DagViewer"), {
   ssr: false,
@@ -65,19 +67,10 @@ export function E2eWizard() {
   const workflow = useMemo(() => {
     if (!yaml) return null;
     try {
-      const parsed = parse(yaml);
-      if (parsed?.id && parsed?.nodes && parsed?.edges && parsed?.entry) {
-        return {
-          id: parsed.id,
-          name: parsed.name ?? parsed.id,
-          description: parsed.description ?? "",
-          entry: parsed.entry,
-          nodes: parsed.nodes,
-          edges: parsed.edges,
-        };
-      }
-    } catch {}
-    return null;
+      return normalizeWorkflow(parse(yaml));
+    } catch {
+      return null;
+    }
   }, [yaml]);
 
   const generate = useCallback(async () => {
@@ -435,9 +428,11 @@ export function E2eWizard() {
           </div>
 
           {/* Live DAG */}
-          <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl overflow-hidden min-h-[400px]">
+          <div className="dag-host bg-[#08080f] border border-[#1e1e2e] rounded-xl overflow-hidden min-h-[400px]">
             {workflow ? (
-              <DagViewer workflow={workflow} height="100%" />
+              <DagBoundary>
+                <DagViewer workflow={workflow} height="100%" />
+              </DagBoundary>
             ) : (
               <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-600 text-sm gap-3 p-6 text-center">
                 {generating ? (

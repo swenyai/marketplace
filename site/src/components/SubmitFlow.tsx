@@ -74,31 +74,36 @@ export function SubmitFlow({
 
   if (tooLarge) {
     return (
-      <div className="space-y-2">
-        <div className="bg-amber-950/20 border border-amber-900/40 rounded-lg p-3 text-xs text-amber-300/90">
-          This workflow is too large to pre-fill via URL. Copy the YAML,
-          then paste it into the GitHub editor that opens.
+      <div className="space-y-3 bg-[#0c0c14] border border-[#1e1e2e] rounded-xl p-4">
+        <div className="text-xs text-gray-400 leading-relaxed">
+          <span className="text-gray-200 font-medium">Submit in two steps.</span>{" "}
+          This workflow is larger than GitHub&rsquo;s URL limit, so copy
+          the YAML first, then paste it into the editor that opens.
         </div>
-        <button
-          type="button"
-          onClick={copyYaml}
-          disabled={disabled}
-          className="w-full bg-[#1a1a2e] hover:bg-[#222244] disabled:opacity-50 text-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium transition border border-[#2a2a3a]"
-        >
-          {copied ? "Copied!" : "1. Copy YAML"}
-        </button>
-        <a
-          href={fallbackUrl}
-          onClick={handleClick}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-disabled={disabled}
-          className={`block w-full text-center bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition ${
-            disabled ? "opacity-50 pointer-events-none" : ""
-          }`}
-        >
-          2. Open GitHub editor
-        </a>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={copyYaml}
+            disabled={disabled}
+            className="bg-[#111] hover:bg-[#1a1a2e] disabled:opacity-50 text-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium transition border border-[#2a2a3a] flex items-center justify-center gap-2"
+          >
+            <span className="text-gray-500 text-xs">1.</span>
+            <span>{copied ? "Copied" : "Copy YAML"}</span>
+          </button>
+          <a
+            href={fallbackUrl}
+            onClick={handleClick}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-disabled={disabled}
+            className={`block text-center bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2 ${
+              disabled ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
+            <span className="text-white/60 text-xs">2.</span>
+            <span>Open editor</span>
+          </a>
+        </div>
       </div>
     );
   }

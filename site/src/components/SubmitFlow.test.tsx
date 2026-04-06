@@ -92,11 +92,14 @@ describe("<SubmitFlow />", () => {
       />
     );
 
-    expect(
-      screen.getByText(/too large to pre-fill/i)
-    ).toBeInTheDocument();
+    // The explanatory copy is rendered inside a <span> inside wrapper
+    // divs — use getAllByText to accept the nested matches.
+    const matches = screen.getAllByText((_, node) =>
+      Boolean(node?.textContent?.includes("larger than GitHub"))
+    );
+    expect(matches.length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: /copy yaml/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open github editor/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /open editor/i })).toBeInTheDocument();
   });
 
   it("copies the YAML to clipboard when the copy button is clicked", async () => {
