@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { parse } from "yaml";
 import { YamlViewer } from "./YamlViewer";
 import { SubmitFlow } from "./SubmitFlow";
+import { buildE2ePrompt, slugify } from "./e2e-prompt";
 
 const DagViewer = dynamic(() => import("./DagViewer"), {
   ssr: false,
@@ -45,6 +46,15 @@ export function E2eWizard() {
   const [yaml, setYaml] = useState("");
   const [valid, setValid] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Abort any in-flight generation on unmount so we don't setState
+  // after the component is gone.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const toggleFlow = (id: string) => {
     setSelectedFlows((prev) =>
@@ -71,6 +81,11 @@ export function E2eWizard() {
   }, [yaml]);
 
   const generate = useCallback(async () => {
+    // Cancel any in-flight request before starting a new one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setGenerating(true);
     setValid(null);
     setErrors([]);
@@ -78,90 +93,24 @@ export function E2eWizard() {
 
     const flowLabels = selectedFlows
       .map((id) => FLOWS.find((f) => f.id === id)?.label)
-      .filter(Boolean);
+      .filter((x): x is string => Boolean(x));
 
     const backendLabel = BACKENDS.find((b) => b.id === backend)?.label ?? backend;
 
-    const prompt = [
-      `Create an E2E UAT workflow for "${appName || "my app"}" at ${appUrl || "https://myapp.com"} using the agent-browser pattern.`,
-      "",
-      "CRITICAL: This uses the agent-browser CLI for browser automation — NOT Playwright, NOT Cypress, NO test framework code.",
-      "The agent drives a real browser via accessibility tree (@ref element IDs), not CSS selectors.",
-      "",
-      "## Required node structure",
-      "",
-      "Every workflow MUST have exactly these node types:",
-      "",
-      "### setup node (copy verbatim)",
-      "- Start agent-browser daemon in background",
-      "- Poll for readiness with `agent-browser get url` (30s timeout)",
-      "- Close stale sessions: `agent-browser close --all`",
-      "- List all available commands: open, snapshot, click, fill, press, get url, screenshot, scroll, scrollintoview, select, keyboard type",
-      "- skills: [] (no skills — agent uses shell commands)",
-      "- Output: status (ready|fail)",
-      "",
-      `### provision node (${backendLabel} backend)`,
-      "- Read env vars ($E2E_BASE_URL, backend credentials)",
-      "- Generate unique test credentials: e2e-{timestamp}@yourapp.test",
-      "- Clean up stale test data from prior crashed runs",
-      "- Create fresh test data via backend admin API",
-      backend === "supabase"
-        ? "- Use Supabase Auth Admin API for users, PostgREST for table data. Env vars: $SUPABASE_URL, $SUPABASE_SERVICE_ROLE_KEY"
-        : backend === "firebase"
-          ? "- Use Firebase Admin REST API. Env vars: $FIREBASE_PROJECT_ID, $FIREBASE_API_KEY"
-          : backend === "postgres"
-            ? "- Use custom REST API or direct database calls. Env vars: $API_URL, $API_KEY"
-            : "- No backend provisioning needed, skip to test nodes",
-      "- Output: status, base_url, run_id, test_email, test_password, user_id",
-      "- skills: []",
-      "",
-      "### test nodes — one per user flow, natural language instructions",
-      "Each test node MUST:",
-      "- Reference values from provision output ('Use the test_email from the provision step')",
-      "- Use numbered steps with specific agent-browser commands",
-      "- Navigate with: agent-browser open <URL>",
-      "- Read the page with: agent-browser snapshot (returns @ref IDs)",
-      "- Interact with: agent-browser click @ref, agent-browser fill @ref 'text'",
-      "- Define success/failure: check URL or snapshot content",
-      "- Take screenshot: agent-browser screenshot results/<name>.png",
-      "- Output: status (pass|fail), error",
-      "- skills: [] (NO skills — the agent uses shell commands)",
-      "",
-      "User flows to test:",
-      ...flowLabels.map((f) => `- ${f}`),
-      "",
-      "### cleanup node",
-      "- Delete all test data matching e2e-* convention",
-      "- Must run on BOTH success AND failure paths",
-      "- Skip gracefully if credentials missing",
-      "- skills: []",
-      "",
-      "### report node",
-      "- Compile pass/fail from all test nodes",
-      "- One-sentence summary",
-      "- Output: total, passed, failed, summary",
-      "- skills: []",
-      "",
-      "## Edge routing (CRITICAL)",
-      "Happy path: setup → provision → test_a → test_b → ... → cleanup → report",
-      "Each node's failure edge goes to cleanup (never skip cleanup):",
-      "- setup fail → report (nothing to clean up)",
-      "- provision fail → cleanup",
-      "- any test fail → cleanup",
-      "",
-      `Set the workflow id to 'e2e-${(appName || "my-app").toLowerCase().replace(/[^a-z0-9]/g, "-")}'.`,
-      "Set author to 'community', category to 'testing'.",
-      "Set all skills to empty arrays: skills: []",
-      "",
-      "IMPORTANT: Do NOT use Playwright, Cypress, or any test framework. Do NOT generate test code.",
-      "The agent executes natural language instructions against agent-browser. That's the whole point.",
-    ].join("\n");
+    const prompt = buildE2ePrompt({
+      appName,
+      appUrl,
+      backend,
+      backendLabel,
+      flowLabels,
+    });
 
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -478,10 +427,7 @@ export function E2eWizard() {
 
             {valid && yaml && (
               <SubmitFlow
-                workflowId={
-                  workflow?.id ??
-                  `e2e-${(appName || "my-app").toLowerCase().replace(/[^a-z0-9]/g, "-")}`
-                }
+                workflowId={workflow?.id ?? `e2e-${slugify(appName)}`}
                 workflowYaml={yaml}
                 workflowName={workflow?.name ?? "E2E Test Workflow"}
               />
