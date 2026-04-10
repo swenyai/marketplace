@@ -14,6 +14,8 @@
   "dependencies": {
     "@sweny-ai/core": "^0.1.35",
     "@sweny-ai/studio": "^8.0.6",
+    "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "@xyflow/react": "^12.6.4",
     "elkjs": "^0.9.3",
     "fuse.js": "^7.1.0",
