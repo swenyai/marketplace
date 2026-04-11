@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import type { MarketplaceWorkflow, WorkflowVariable } from "@/lib/types";
 
 const DEFAULT_VARIABLES: WorkflowVariable[] = [
@@ -22,7 +22,9 @@ export function InstallButton({ workflow }: InstallButtonProps) {
   const [open, setOpen] = useState(false);
   const [repo, setRepo] = useState("");
   const [branch, setBranch] = useState("main");
+  const [opened, setOpened] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const linkRef = useRef<HTMLAnchorElement>(null);
 
   const variables = workflow.variables?.length ? workflow.variables : DEFAULT_VARIABLES;
 
@@ -70,12 +72,29 @@ ${envBlock}`;
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const valid = /^[^/]+\/[^/]+$/.test(repo.trim());
+  // Reset opened state when repo changes
+  useEffect(() => {
+    setOpened(false);
+  }, [repo, branch]);
 
-  function buildInstallUrl() {
+  const valid = /^[^/]+\/[^/]+$/.test(repo.trim());
+  const touched = repo.length > 0;
+
+  const buildInstallUrl = useCallback(() => {
     const [owner, name] = repo.trim().split("/");
     const encoded = encodeURIComponent(yamlContent);
     return `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/new/${encodeURIComponent(branch)}?filename=.github/workflows/sweny.yml&value=${encoded}`;
+  }, [repo, branch, yamlContent]);
+
+  function handleOpen() {
+    if (!valid) return;
+    setOpened(true);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Enter" && valid) {
+      linkRef.current?.click();
+    }
   }
 
   if (!open) {
@@ -105,24 +124,33 @@ ${envBlock}`;
       </div>
 
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Repository (owner/name)</label>
+        <label className="text-xs text-gray-500 block mb-1">Repository</label>
         <input
           ref={inputRef}
           type="text"
           value={repo}
           onChange={(e) => setRepo(e.target.value)}
-          placeholder="your-org/your-repo"
-          className="w-full bg-[#08080f] border border-[#2a2a3a] rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-600"
+          onKeyDown={handleKeyDown}
+          placeholder="owner/repo"
+          className={`w-full bg-[#08080f] border rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition ${
+            touched && !valid
+              ? "border-red-800/50 focus:border-red-600"
+              : "border-[#2a2a3a] focus:border-blue-600"
+          }`}
         />
+        {touched && !valid && (
+          <p className="text-[10px] text-red-400/70 mt-1">Enter as owner/repo, e.g. acme/api</p>
+        )}
       </div>
 
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Branch</label>
+        <label className="text-xs text-gray-500 block mb-1">Branch <span className="text-gray-700">— target for the workflow file</span></label>
         <input
           type="text"
           value={branch}
           onChange={(e) => setBranch(e.target.value)}
-          className="w-full bg-[#08080f] border border-[#2a2a3a] rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-600"
+          onKeyDown={handleKeyDown}
+          className="w-full bg-[#08080f] border border-[#2a2a3a] rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-600 transition"
         />
       </div>
 
@@ -157,22 +185,35 @@ ${envBlock}`;
       )}
 
       <div className="flex items-center gap-2 pt-1">
-        <a
-          href={valid ? buildInstallUrl() : "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => { if (!valid) e.preventDefault(); }}
-          className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
-            valid
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "bg-gray-800 text-gray-600 cursor-not-allowed"
-          }`}
-        >
-          Open in GitHub
-          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-          </svg>
-        </a>
+        {opened ? (
+          <div className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-900/30 border border-green-800/40 text-green-400">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            Opened in GitHub
+          </div>
+        ) : (
+          <a
+            ref={linkRef}
+            href={valid ? buildInstallUrl() : "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              if (!valid) { e.preventDefault(); return; }
+              handleOpen();
+            }}
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
+              valid
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-gray-800 text-gray-600 cursor-not-allowed"
+            }`}
+          >
+            Open in GitHub
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+            </svg>
+          </a>
+        )}
       </div>
 
       <p className="text-[10px] text-gray-600 leading-relaxed">

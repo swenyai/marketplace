@@ -36,7 +36,7 @@ describe("InstallButton", () => {
     await user.click(screen.getByText("Install to Repo"));
 
     expect(screen.getByText("Install to GitHub")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("your-org/your-repo")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("owner/repo")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
   });
 
@@ -66,7 +66,7 @@ describe("InstallButton", () => {
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
-    await user.type(screen.getByPlaceholderText("your-org/your-repo"), "my-org/my-repo");
+    await user.type(screen.getByPlaceholderText("owner/repo"), "my-org/my-repo");
 
     const link = screen.getByText("Open in GitHub").closest("a")!;
     const href = link.getAttribute("href")!;
@@ -81,7 +81,7 @@ describe("InstallButton", () => {
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
-    await user.type(screen.getByPlaceholderText("your-org/your-repo"), "org/repo");
+    await user.type(screen.getByPlaceholderText("owner/repo"), "org/repo");
 
     // Change branch to something with special chars
     const branchInput = screen.getByDisplayValue("main");
@@ -102,7 +102,7 @@ describe("InstallButton", () => {
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
-    await user.type(screen.getByPlaceholderText("your-org/your-repo"), "justrepo");
+    await user.type(screen.getByPlaceholderText("owner/repo"), "justrepo");
 
     const link = screen.getByText("Open in GitHub").closest("a")!;
     expect(link).toHaveAttribute("href", "#");
@@ -123,7 +123,7 @@ describe("InstallButton", () => {
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
-    await user.type(screen.getByPlaceholderText("your-org/your-repo"), "org/repo");
+    await user.type(screen.getByPlaceholderText("owner/repo"), "org/repo");
 
     const link = screen.getByText("Open in GitHub").closest("a")!;
     const href = link.getAttribute("href")!;
@@ -138,7 +138,7 @@ describe("InstallButton", () => {
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
-    await user.type(screen.getByPlaceholderText("your-org/your-repo"), "org/repo");
+    await user.type(screen.getByPlaceholderText("owner/repo"), "org/repo");
 
     const link = screen.getByText("Open in GitHub").closest("a")!;
     expect(link).toHaveAttribute("target", "_blank");
@@ -169,7 +169,7 @@ describe("InstallButton", () => {
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
-    await user.type(screen.getByPlaceholderText("your-org/your-repo"), "org/repo");
+    await user.type(screen.getByPlaceholderText("owner/repo"), "org/repo");
 
     const link = screen.getByText("Open in GitHub").closest("a")!;
     const href = link.getAttribute("href")!;
@@ -185,5 +185,46 @@ describe("InstallButton", () => {
     expect(value).toContain("actions/checkout@v4");
     expect(value).toContain("swenyai/sweny@v5");
     expect(value).toContain("ANTHROPIC_API_KEY");
+  });
+
+  // --- Polish tests ---
+
+  it("shows validation hint when repo format is invalid", async () => {
+    const user = userEvent.setup();
+    render(<InstallButton workflow={MOCK_WORKFLOW} />);
+
+    await user.click(screen.getByText("Install to Repo"));
+    await user.type(screen.getByPlaceholderText("owner/repo"), "badinput");
+
+    expect(screen.getByText(/Enter as owner\/repo/)).toBeInTheDocument();
+  });
+
+  it("hides validation hint when repo is empty (not yet touched)", async () => {
+    const user = userEvent.setup();
+    render(<InstallButton workflow={MOCK_WORKFLOW} />);
+
+    await user.click(screen.getByText("Install to Repo"));
+
+    expect(screen.queryByText(/Enter as owner\/repo/)).not.toBeInTheDocument();
+  });
+
+  it("shows success state after opening in GitHub", async () => {
+    const user = userEvent.setup();
+    render(<InstallButton workflow={MOCK_WORKFLOW} />);
+
+    await user.click(screen.getByText("Install to Repo"));
+    await user.type(screen.getByPlaceholderText("owner/repo"), "org/repo");
+    await user.click(screen.getByText("Open in GitHub"));
+
+    expect(screen.getByText("Opened in GitHub")).toBeInTheDocument();
+  });
+
+  it("shows branch hint text", async () => {
+    const user = userEvent.setup();
+    render(<InstallButton workflow={MOCK_WORKFLOW} />);
+
+    await user.click(screen.getByText("Install to Repo"));
+
+    expect(screen.getByText(/target for the workflow file/)).toBeInTheDocument();
   });
 });
