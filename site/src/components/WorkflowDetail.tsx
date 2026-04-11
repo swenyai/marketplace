@@ -63,7 +63,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
           </div>
           <h2 className="text-lg md:text-xl font-bold text-gray-100 min-w-0 break-words">{workflow.name}</h2>
           <span
-            className={`text-[10px] font-medium px-2 py-0.5 rounded ${
+            className={`text-[11px] font-medium px-2 py-0.5 rounded ${
               workflow.source === "official"
                 ? "bg-blue-950/50 text-blue-400"
                 : "bg-green-950/50 text-green-400"
@@ -164,7 +164,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                 <span className="text-xs text-gray-200 font-medium capitalize">{skill}</span>
               </div>
-              <span className="text-[10px] text-gray-600 break-words">Used in: {nodes.join(", ")}</span>
+              <span className="text-[11px] text-gray-600 break-words">Used in: {nodes.join(", ")}</span>
             </div>
           ))}
         </div>

@@ -1,23 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { MarketplaceWorkflow, WorkflowVariable } from "@/lib/types";
+import { DEFAULT_VARIABLES } from "@/lib/types";
+import type { MarketplaceWorkflow } from "@/lib/types";
 
 interface UsageSnippetProps {
   workflow: MarketplaceWorkflow;
 }
-
-/** Default variables that every workflow gets if none are declared */
-const DEFAULT_VARIABLES: WorkflowVariable[] = [
-  {
-    name: "ANTHROPIC_API_KEY",
-    description: "Anthropic API key for Claude",
-    required: true,
-    alternatives: [
-      { name: "CLAUDE_CODE_OAUTH_TOKEN", description: "Claude Code OAuth token" },
-    ],
-  },
-];
 
 export function UsageSnippet({ workflow }: UsageSnippetProps) {
   const [copied, setCopied] = useState(false);
@@ -49,12 +38,17 @@ on:
   schedule:
     - cron: '0 */6 * * *'  # Every 6 hours
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   sweny:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: swenyai/sweny@v4
+      - uses: swenyai/sweny@v5
         with:
           sweny-workflow: |
             ${workflow.id}

@@ -45,6 +45,17 @@ export interface MarketplaceWorkflow extends Workflow, MarketplaceMetadata {
   skills: string[];
 }
 
+export const DEFAULT_VARIABLES: WorkflowVariable[] = [
+  {
+    name: "ANTHROPIC_API_KEY",
+    description: "Anthropic API key for Claude",
+    required: true,
+    alternatives: [
+      { name: "CLAUDE_CODE_OAUTH_TOKEN", description: "Claude Code OAuth token" },
+    ],
+  },
+];
+
 export const CATEGORIES: Record<
   Category,
   { label: string; icon: string; color: CardColor }

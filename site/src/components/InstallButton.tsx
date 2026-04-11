@@ -1,18 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import type { MarketplaceWorkflow, WorkflowVariable } from "@/lib/types";
-
-const DEFAULT_VARIABLES: WorkflowVariable[] = [
-  {
-    name: "ANTHROPIC_API_KEY",
-    description: "Anthropic API key for Claude",
-    required: true,
-    alternatives: [
-      { name: "CLAUDE_CODE_OAUTH_TOKEN", description: "Claude Code OAuth token" },
-    ],
-  },
-];
+import { DEFAULT_VARIABLES } from "@/lib/types";
+import type { MarketplaceWorkflow } from "@/lib/types";
 
 interface InstallButtonProps {
   workflow: MarketplaceWorkflow;
@@ -139,7 +129,7 @@ ${envBlock}`;
           }`}
         />
         {touched && !valid && (
-          <p className="text-[10px] text-red-400/70 mt-1">Enter as owner/repo, e.g. acme/api</p>
+          <p className="text-[11px] text-red-400/70 mt-1">Enter as owner/repo, e.g. acme/api</p>
         )}
       </div>
 
@@ -216,7 +206,7 @@ ${envBlock}`;
         )}
       </div>
 
-      <p className="text-[10px] text-gray-600 leading-relaxed">
+      <p className="text-[11px] text-gray-600 leading-relaxed">
         Opens GitHub&apos;s file editor with the workflow pre-filled. You review and commit — SWEny never writes to your repo.
         After committing, add your API key to{" "}
         <a
