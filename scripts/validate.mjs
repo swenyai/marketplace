@@ -40,6 +40,18 @@ for (const dir of dirs) {
 
       if (!/^[a-z0-9-]+$/.test(parsed.id))
         errors.push(`[metadata] id must be lowercase alphanumeric with hyphens: '${parsed.id}'`);
+
+      // Validate inline skills block
+      if (parsed.skills && typeof parsed.skills === "object") {
+        for (const [skillId, def] of Object.entries(parsed.skills)) {
+          if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(skillId) || skillId.includes("--") || skillId.length > 64) {
+            errors.push(`[skills] invalid skill ID '${skillId}' (lowercase alphanumeric + hyphens, no consecutive hyphens, max 64 chars)`);
+          }
+          if (!def.instruction && !def.mcp) {
+            errors.push(`[skills] skill '${skillId}' must have instruction or mcp`);
+          }
+        }
+      }
     } catch (e) {
       errors.push(`[parse] ${e.message}`);
     }
