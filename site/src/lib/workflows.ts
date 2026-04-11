@@ -48,9 +48,9 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
       }
 
       // Extract inline custom skills from the workflow's skills block
-      const customSkills: Record<string, any> = {};
+      const customSkills: MarketplaceWorkflow["customSkills"] = {};
       if (parsed.skills && typeof parsed.skills === "object") {
-        for (const [id, def] of Object.entries(parsed.skills)) {
+        for (const [id, def] of Object.entries(parsed.skills as Record<string, MarketplaceWorkflow["customSkills"][string]>)) {
           customSkills[id] = def;
           allSkills.add(id);
         }

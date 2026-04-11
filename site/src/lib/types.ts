@@ -1,4 +1,4 @@
-import type { Workflow } from "@sweny-ai/core";
+import type { Workflow, McpServerConfig } from "@sweny-ai/core";
 
 export interface WorkflowVariable {
   name: string;
@@ -44,7 +44,7 @@ export interface MarketplaceWorkflow extends Workflow, MarketplaceMetadata {
   edgeCount: number;
   skills: string[];
   /** Inline custom skills defined in the workflow's skills block */
-  customSkills: Record<string, { name?: string; description?: string; instruction?: string; mcp?: any }>;
+  customSkills: Record<string, { name?: string; description?: string; instruction?: string; mcp?: McpServerConfig }>;
 }
 
 export const DEFAULT_VARIABLES: WorkflowVariable[] = [
