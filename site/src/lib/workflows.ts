@@ -47,6 +47,15 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
         }
       }
 
+      // Extract inline custom skills from the workflow's skills block
+      const customSkills: Record<string, any> = {};
+      if (parsed.skills && typeof parsed.skills === "object") {
+        for (const [id, def] of Object.entries(parsed.skills)) {
+          customSkills[id] = def;
+          allSkills.add(id);
+        }
+      }
+
       workflows.push({
         ...workflow,
         ...meta,
@@ -55,6 +64,7 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
         nodeCount: Object.keys(workflow.nodes).length,
         edgeCount: workflow.edges.length,
         skills: [...allSkills],
+        customSkills,
       });
     } catch (err) {
       console.warn(`Skipping ${file}: ${err instanceof Error ? err.message : err}`);
