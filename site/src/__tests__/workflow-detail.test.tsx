@@ -53,25 +53,38 @@ describe("WorkflowDetail layout", () => {
   const src = readSrc("components/WorkflowDetail.tsx");
 
   it("renders actions BEFORE the DAG (above the fold)", () => {
-    // Actions div must appear before the DAG div in source order
-    const actionsIdx = src.indexOf("Actions — above the fold");
+    const actionsIdx = src.indexOf("Actions — always above the fold");
     const dagIdx = src.indexOf("Interactive DAG");
     expect(actionsIdx).toBeGreaterThan(-1);
     expect(dagIdx).toBeGreaterThan(-1);
     expect(actionsIdx).toBeLessThan(dagIdx);
   });
 
-  it("renders cloud CTA BEFORE the DAG", () => {
-    const ctaIdx = src.indexOf("Cloud CTA");
+  it("renders tabs BEFORE the DAG (immediately after actions)", () => {
+    const tabsIdx = src.indexOf("Tabs — immediately after actions");
     const dagIdx = src.indexOf("Interactive DAG");
-    expect(ctaIdx).toBeGreaterThan(-1);
-    expect(ctaIdx).toBeLessThan(dagIdx);
+    expect(tabsIdx).toBeGreaterThan(-1);
+    expect(tabsIdx).toBeLessThan(dagIdx);
   });
 
-  it("renders tabs AFTER the DAG", () => {
+  it("renders cloud CTA AFTER the DAG (bottom of page)", () => {
     const dagIdx = src.indexOf("Interactive DAG");
-    const tabsIdx = src.indexOf("{/* Tabs */}");
-    expect(tabsIdx).toBeGreaterThan(dagIdx);
+    const ctaIdx = src.indexOf("Cloud CTA");
+    expect(dagIdx).toBeGreaterThan(-1);
+    expect(ctaIdx).toBeGreaterThan(dagIdx);
+  });
+
+  it("layout order: actions → tabs → tab content → DAG → cloud CTA", () => {
+    const order = [
+      src.indexOf("Actions — always above the fold"),
+      src.indexOf("Tabs — immediately after actions"),
+      src.indexOf("Tab content"),
+      src.indexOf("Interactive DAG"),
+      src.indexOf("Cloud CTA"),
+    ];
+    for (let i = 1; i < order.length; i++) {
+      expect(order[i]).toBeGreaterThan(order[i - 1]);
+    }
   });
 
   it("contains all three action buttons", () => {
@@ -128,8 +141,8 @@ describe("WorkflowDetail layout", () => {
   it("renders responsive DAG — mobile and desktop sizes", () => {
     expect(src).toContain("block md:hidden");
     expect(src).toContain("hidden md:block");
-    expect(src).toContain("height={320}");
-    expect(src).toContain("height={500}");
+    expect(src).toContain("height={280}");
+    expect(src).toContain("height={400}");
   });
 
   it("uses dynamic import for DagViewer with SSR disabled", () => {
