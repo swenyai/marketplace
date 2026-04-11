@@ -75,7 +75,7 @@ ${envBlock}`;
   function buildInstallUrl() {
     const [owner, name] = repo.trim().split("/");
     const encoded = encodeURIComponent(yamlContent);
-    return `https://github.com/${owner}/${name}/new/${branch}?filename=.github/workflows/sweny.yml&value=${encoded}`;
+    return `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/new/${encodeURIComponent(branch)}?filename=.github/workflows/sweny.yml&value=${encoded}`;
   }
 
   if (!open) {
