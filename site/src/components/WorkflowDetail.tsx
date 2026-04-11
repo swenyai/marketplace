@@ -91,6 +91,43 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
         <span>v{workflow.version}</span>
       </div>
 
+      {/* Actions — above the fold */}
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+        <InstallButton workflow={workflow} />
+        <a
+          href={`/create?fork=${workflow.id}`}
+          className="flex-1 bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium text-center transition"
+        >
+          Fork & Edit
+        </a>
+        <a
+          href={`https://github.com/swenyai/marketplace/blob/main/${workflow.filePath}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm text-center transition"
+        >
+          GitHub
+        </a>
+      </div>
+
+      {/* Cloud CTA */}
+      <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-blue-950/20 border border-blue-900/30 rounded-lg">
+        <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+        <p className="text-xs text-gray-400">
+          Track this workflow&apos;s performance{" "}
+          <a
+            href="https://cloud.sweny.ai"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 font-medium"
+          >
+            cloud.sweny.ai &rarr;
+          </a>
+        </p>
+      </div>
+
       {/* Interactive DAG */}
       <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl mb-4 overflow-hidden marketplace-dag">
         <div className="block md:hidden">
@@ -134,43 +171,6 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
       )}
       {tab === "yaml" && <YamlViewer yaml={yamlString} />}
       {tab === "usage" && <UsageSnippet workflow={workflow} />}
-
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-2 mt-4">
-        <InstallButton workflow={workflow} />
-        <a
-          href={`/create?fork=${workflow.id}`}
-          className="flex-1 bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium text-center transition"
-        >
-          Fork & Edit
-        </a>
-        <a
-          href={`https://github.com/swenyai/marketplace/blob/main/${workflow.filePath}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm text-center transition"
-        >
-          GitHub
-        </a>
-      </div>
-
-      {/* Cloud CTA */}
-      <div className="mt-3 flex items-center gap-2 px-4 py-2.5 bg-blue-950/20 border border-blue-900/30 rounded-lg">
-        <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-        </svg>
-        <p className="text-xs text-gray-400">
-          Track this workflow&apos;s performance{" "}
-          <a
-            href="https://cloud.sweny.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 font-medium"
-          >
-            cloud.sweny.ai &rarr;
-          </a>
-        </p>
-      </div>
     </div>
   );
 }
