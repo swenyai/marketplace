@@ -47,6 +47,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans bg-[#09090b] text-gray-100 antialiased`}
       >
         {children}
+        <footer className="border-t border-[#1e1e2e] mt-12 py-6 text-center">
+          <p className="text-sm text-gray-500">
+            See what your workflows find{" "}
+            <a
+              href="https://cloud.sweny.ai"
+              className="text-blue-500 hover:text-blue-400 font-medium"
+            >
+              cloud.sweny.ai
+            </a>
+          </p>
+        </footer>
         <Analytics />
         <SpeedInsights />
       </body>
