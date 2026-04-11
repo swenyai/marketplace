@@ -47,16 +47,28 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} font-sans bg-[#09090b] text-gray-100 antialiased`}
       >
         {children}
-        <footer className="border-t border-[#1e1e2e] mt-12 py-6 text-center">
-          <p className="text-sm text-gray-500">
-            See what your workflows find{" "}
-            <a
-              href="https://cloud.sweny.ai"
-              className="text-blue-500 hover:text-blue-400 font-medium"
-            >
-              cloud.sweny.ai
-            </a>
-          </p>
+        <footer className="border-t border-[#1e1e2e] mt-16 py-8 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+              <span className="text-sm font-semibold text-gray-400 tracking-tight">
+                SWE<span className="text-blue-500">ny</span> Workflows
+              </span>
+              <div className="flex items-center gap-6 text-xs text-gray-500">
+                <a href="https://cloud.sweny.ai" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">
+                  Dashboard
+                </a>
+                <a href="https://spec.sweny.ai" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">
+                  Spec
+                </a>
+                <a href="https://github.com/swenyai/sweny" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition">
+                  GitHub
+                </a>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-700 text-center">
+              Read-only by design. SWEny never writes to your repos.
+            </p>
+          </div>
         </footer>
         <Analytics />
         <SpeedInsights />
