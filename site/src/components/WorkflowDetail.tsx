@@ -11,6 +11,7 @@ const DagViewer = dynamic(
 import { COLOR_MAP, CATEGORIES } from "@/lib/types";
 import { YamlViewer } from "./YamlViewer";
 import { UsageSnippet } from "./UsageSnippet";
+import { InstallButton } from "./InstallButton";
 import { stringify } from "yaml";
 
 type Tab = "skills" | "yaml" | "usage";
@@ -136,12 +137,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-2 mt-4">
-        <button
-          onClick={() => setTab("usage")}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium transition"
-        >
-          Use This Workflow
-        </button>
+        <InstallButton workflow={workflow} />
         <a
           href={`/create?fork=${workflow.id}`}
           className="flex-1 bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium text-center transition"
