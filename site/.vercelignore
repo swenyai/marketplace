@@ -1,0 +1,14 @@
+*.md
+!README.md
+docs/
+.github/
+.vscode/
+.idea/
+tests/
+__tests__/
+*.test.*
+*.spec.*
+coverage/
+e2e/
+.DS_Store
+*.log
