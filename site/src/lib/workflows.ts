@@ -65,6 +65,7 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
         edgeCount: workflow.edges.length,
         skills: [...allSkills],
         customSkills,
+        sampleOutput: typeof parsed.sample_output === "string" ? parsed.sample_output : undefined,
       });
     } catch (err) {
       console.warn(`Skipping ${file}: ${err instanceof Error ? err.message : err}`);

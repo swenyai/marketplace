@@ -128,3 +128,26 @@ edges:
     to: notify
   - from: create_pr
     to: notify
+sample_output: |
+  ## Implementation Result — OFF-1020
+
+  **Issue:** OFF-1020 — IndexError in generate_summary()
+  **Branch:** fix/off-1020-guard-empty-pdf-texts
+  **PR:** #287 — "fix: guard empty pdf_texts before access"
+
+  ### Changes
+  - `src/api/reports/generate.py:42` — Added early return when
+    `pdf_texts` is empty, returning a default summary instead of
+    crashing on index access.
+  - `tests/api/test_reports.py` — Added test case for empty
+    attachments scenario.
+
+  ### Verification
+  - All existing tests pass (47/47)
+  - New test covers the empty-array edge case
+  - Manual verification: endpoint returns 200 with default summary
+
+  ### PR Description
+  Fixes OFF-1020. The `generate_summary()` function assumed at least
+  one PDF attachment exists. This PR adds an early-return guard that
+  produces a placeholder summary when no attachments are present.

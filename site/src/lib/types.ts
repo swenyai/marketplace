@@ -45,6 +45,8 @@ export interface MarketplaceWorkflow extends Workflow, MarketplaceMetadata {
   skills: string[];
   /** Inline custom skills defined in the workflow's skills block */
   customSkills: Record<string, { name?: string; description?: string; instruction?: string; mcp?: McpServerConfig }>;
+  /** Sample output shown on the detail page */
+  sampleOutput?: string;
 }
 
 export const DEFAULT_VARIABLES: WorkflowVariable[] = [

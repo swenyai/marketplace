@@ -1,0 +1,292 @@
+id: release-notes
+name: Release Notes Generator
+description: Generate polished release notes from commits and PRs — categorize changes, draft user-facing notes, use an LLM judge for quality, and publish to multiple channels
+author: sweny-ai
+category: content
+tags: [release, changelog, documentation, communication, llm-judge]
+icon: megaphone
+color: blue
+version: 1.0.0
+sweny_version: ">=5.0.0"
+variables:
+  - name: ANTHROPIC_API_KEY
+    description: Anthropic API key for Claude
+    required: true
+    alternatives:
+      - name: CLAUDE_CODE_OAUTH_TOKEN
+        description: Claude Code OAuth token
+  - name: GITHUB_TOKEN
+    description: GitHub token for repo access
+    required: true
+  - name: SLACK_WEBHOOK_URL
+    description: Slack webhook for announcements
+entry: gather-changes
+nodes:
+  gather-changes:
+    name: Gather Changes Since Last Release
+    instruction: >-
+      Collect all changes since the last release:
+
+
+      1. **Find last release**: Identify the most recent release tag or version marker.
+
+      2. **Collect commits**: List all commits between the last release and HEAD.
+         Parse conventional commit prefixes (feat:, fix:, chore:, docs:, etc.).
+
+      3. **Collect PRs**: List all merged PRs in the range. Extract:
+         - PR title and description
+         - Labels (feature, bugfix, breaking, etc.)
+         - Author
+
+      4. **Categorize changes**:
+         - **Features**: New functionality (feat: commits, "feature" label PRs)
+         - **Bug Fixes**: Corrections (fix: commits, "bugfix" label PRs)
+         - **Breaking Changes**: Anything marked as BREAKING or with "breaking" label
+         - **Performance**: Performance improvements
+         - **Documentation**: Doc updates
+         - **Internal**: Refactoring, CI, dependency updates (usually omitted from user-facing notes)
+
+      5. **Extract highlights**: Identify the 2-3 most impactful changes that should
+         be featured prominently.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        version:
+          type: string
+        previous_version:
+          type: string
+        categories:
+          type: object
+          properties:
+            features:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  description:
+                    type: string
+                  pr:
+                    type: number
+                  author:
+                    type: string
+                required: [title]
+            bug_fixes:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  pr:
+                    type: number
+                required: [title]
+            breaking_changes:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                  migration:
+                    type: string
+                required: [title]
+            performance:
+              type: array
+              items:
+                type: object
+                properties:
+                  title:
+                    type: string
+                required: [title]
+        highlights:
+          type: array
+          items:
+            type: string
+        total_commits:
+          type: number
+        total_prs:
+          type: number
+        contributors:
+          type: array
+          items:
+            type: string
+      required: [version, categories, total_commits]
+
+  draft-notes:
+    name: Draft Release Notes
+    instruction: >-
+      Write polished, user-facing release notes:
+
+
+      **Structure:**
+
+      1. **Headline**: One compelling sentence about this release.
+         Good: "Faster builds, smarter caching, and native ARM support"
+         Bad: "Version 2.4.0 release"
+
+      2. **Highlights**: 2-3 paragraphs on the most impactful changes.
+         Explain the benefit to users, not the technical implementation.
+         "You can now deploy to multiple regions simultaneously" not
+         "Added multi-region support to the deployment pipeline."
+
+      3. **Breaking Changes** (if any): Clear migration instructions with
+         before/after code examples. This section must be actionable.
+
+      4. **Features**: Bulleted list with concise descriptions.
+         Each item should explain what users can now DO.
+
+      5. **Bug Fixes**: Bulleted list. Focus on the user-visible symptom that was fixed.
+         "Fixed: Dashboard charts no longer freeze when filtering by date range"
+         not "Fixed race condition in chart rendering lifecycle."
+
+      6. **Performance**: Only include if users would notice the difference.
+
+      7. **Contributors**: Thank contributors by username with links.
+
+
+      **Tone**: Professional but warm. Celebrate what's new. Be honest about breaking changes.
+      Write for your users, not your engineers.
+    skills: []
+
+  judge-notes:
+    name: Release Notes Quality Judge
+    instruction: >-
+      You are a developer advocate reviewing these release notes before publication.
+      They will be read by hundreds of developers. Evaluate critically.
+
+
+      **Score each dimension 1-5:**
+
+      1. **Clarity**: Can a user understand every change without reading the source code?
+         Are benefits explained in user terms, not implementation details?
+
+      2. **Completeness**: Are all user-facing changes documented? Are breaking changes
+         clearly called out with migration paths?
+
+      3. **Tone**: Is it professional and welcoming? Does it avoid jargon? Does it
+         celebrate improvements without overselling?
+
+      4. **Actionability**: For breaking changes, can users follow the migration instructions
+         step by step? Are code examples provided?
+
+      5. **Scannability**: Can someone skim this in 30 seconds and know what matters?
+         Are highlights prominent? Is there a clear hierarchy?
+
+
+      **Overall verdict**: PASS (all dimensions >= 4) or FAIL (any dimension < 4).
+
+      If FAIL, quote the weak sections and explain exactly what to improve.
+    skills: []
+    output:
+      type: object
+      properties:
+        scores:
+          type: object
+          properties:
+            clarity:
+              type: number
+            completeness:
+              type: number
+            tone:
+              type: number
+            actionability:
+              type: number
+            scannability:
+              type: number
+        verdict:
+          type: string
+          enum: [PASS, FAIL]
+        feedback:
+          type: string
+      required: [scores, verdict]
+
+  refine-notes:
+    name: Refine Release Notes
+    instruction: >-
+      The quality judge found issues with the release notes. Revise to address every
+      piece of feedback:
+
+
+      1. Do not remove content that scored well — only improve weak sections.
+
+      2. If clarity was low, rewrite technical descriptions in user-facing language.
+
+      3. If completeness was flagged, add the missing changes or migration details.
+
+      4. If tone was off, adjust without losing substance.
+
+      5. If actionability was low, add code examples for breaking changes.
+
+      6. If scannability was low, improve headings, use bold for key terms, and
+         ensure highlights are at the top.
+    skills: []
+
+  publish-release:
+    name: Publish Release Notes
+    instruction: >-
+      Publish the finalized release notes:
+
+
+      1. **GitHub Release**: Create a GitHub release with:
+         - Tag name matching the version
+         - Full release notes as the body
+         - Mark as pre-release if applicable
+
+      2. **Notification**: Send a release announcement with:
+         - Version number and headline
+         - Link to full release notes
+         - Number of features, fixes, and breaking changes
+         - Keep it to 3-4 lines max
+
+      3. **Update CHANGELOG**: Prepend the new release to CHANGELOG.md if one exists.
+    skills:
+      - github
+      - slack
+      - notification
+
+edges:
+  - from: gather-changes
+    to: draft-notes
+  - from: draft-notes
+    to: judge-notes
+  - from: judge-notes
+    to: refine-notes
+    when: verdict is FAIL
+  - from: judge-notes
+    to: publish-release
+    when: verdict is PASS
+  - from: refine-notes
+    to: judge-notes
+    max_iterations: 3
+
+sample_output: |
+  # Release v2.4.0
+
+  We shipped some big improvements this cycle. Here's what's new.
+
+  ## Features
+  - **Custom Skills** — Define your own skills with SKILL.md files.
+    Instruction-based and MCP-backed skills, cross-tool compatible
+    with Claude Code, Codex, and Gemini CLI. (#284)
+  - **Workflow Templates** — `sweny init` now offers starter templates:
+    PR Review, Issue Triage, Security Audit, Release Notes. (#291)
+
+  ## Fixes
+  - Fixed executor crash when inline workflow skills reference
+    undefined MCP servers. (#288)
+  - Resolved race condition in parallel node execution when two
+    nodes share the same skill. (#289)
+
+  ## Improvements
+  - Triage workflow now deduplicates findings against existing
+    open issues before creating new ones. (#285)
+  - CLI spinner shows step count from workflow DAG. (#290)
+
+  ## Contributors
+  @nate, @claude-bot, @dependabot
+
+  **Full changelog:** v2.3.0...v2.4.0

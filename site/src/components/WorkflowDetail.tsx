@@ -14,7 +14,7 @@ import { UsageSnippet } from "./UsageSnippet";
 import { InstallButton } from "./InstallButton";
 import { stringify } from "yaml";
 
-type Tab = "skills" | "yaml" | "usage";
+type Tab = "skills" | "yaml" | "usage" | "output";
 
 interface WorkflowDetailProps {
   workflow: MarketplaceWorkflow;
@@ -112,7 +112,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
 
       {/* Tabs — immediately after actions */}
       <div className="flex border-b border-[#1e1e2e] mb-3 overflow-x-auto">
-        {(["skills", "yaml", "usage"] as Tab[]).map((t) => (
+        {(["skills", ...(workflow.sampleOutput ? ["output"] : []), "yaml", "usage"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -122,7 +122,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            {t === "skills" ? "Skills Required" : t === "yaml" ? "YAML Source" : "Usage"}
+            {t === "skills" ? "Skills Required" : t === "output" ? "Sample Output" : t === "yaml" ? "YAML Source" : "Usage"}
           </button>
         ))}
       </div>
@@ -170,6 +170,12 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
                 </div>
               );
             })}
+          </div>
+        )}
+        {tab === "output" && workflow.sampleOutput && (
+          <div className="bg-[#111] border border-[#1e1e2e] rounded-lg p-4">
+            <div className="text-[11px] text-gray-600 mb-2 uppercase tracking-wider font-medium">Example workflow output</div>
+            <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{workflow.sampleOutput}</pre>
           </div>
         )}
         {tab === "yaml" && <YamlViewer yaml={yamlString} />}

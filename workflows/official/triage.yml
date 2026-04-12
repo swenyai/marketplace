@@ -307,3 +307,26 @@ edges:
     to: create_pr
   - from: create_pr
     to: notify
+
+sample_output: |
+  ## Triage Report — Alert #4821
+
+  **Alert:** IndexError in /api/reports/generate (Sentry PROJ-4821)
+  **Severity:** P1 — High
+  **Status:** Fix implemented, PR open
+
+  ### Root Cause
+  The `pdf_texts` array is empty when a report has no attachments, but
+  `generate_summary()` accesses `pdf_texts[0]` unconditionally. This
+  crashes the endpoint for any report without PDF uploads.
+
+  ### Timeline
+  - **14:32 UTC** — First error in Sentry (3 occurrences in 10 min)
+  - **14:33 UTC** ��� SWEny triage triggered, investigation started
+  - **14:34 UTC** — Root cause identified, fix branch created
+  - **14:35 UTC** — PR #287 opened: "fix: guard empty pdf_texts before access"
+
+  ### Actions Taken
+  - Created Linear issue OFF-1020 (P1, assigned to backend team)
+  - Opened PR #287 with minimal fix (added empty-array guard)
+  - Notified #engineering channel via Slack
