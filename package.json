@@ -6,7 +6,8 @@
     "dev": "cd site && npm run dev",
     "build": "cd site && npm run build",
     "validate": "node scripts/validate.mjs",
-    "check-ids": "node scripts/check-unique-ids.mjs"
+    "check-ids": "node scripts/check-unique-ids.mjs",
+    "check:skills": "node scripts/check-skill-parity.mjs"
   },
   "dependencies": {
     "@sweny-ai/core": "latest",

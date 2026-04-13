@@ -1,0 +1,289 @@
+id: data-pipeline-monitor
+name: Data Pipeline Monitor
+description: Monitor data pipeline health — check freshness, volume anomalies, schema drift, and quality metrics — with conditional escalation based on severity
+author: sweny-ai
+category: ops
+tags: [data, pipeline, monitoring, freshness, quality, anomaly-detection]
+icon: activity
+color: cyan
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: check-pipeline-health
+nodes:
+  check-pipeline-health:
+    name: Check Pipeline Health
+    instruction: >-
+      Run a comprehensive health check on data pipelines:
+
+
+      1. **Freshness check**: For each monitored table/dataset:
+         - When was the last successful update?
+         - Is it within the expected SLA (e.g., "updated every hour")?
+         - How many SLA violations in the last 24 hours?
+
+      2. **Volume anomaly detection**: Compare recent data volumes to baselines:
+         - Row counts for the last N runs vs. historical average
+         - Flag if volume is >2x or <0.5x the 7-day rolling average
+         - Check for complete data gaps (zero rows)
+
+      3. **Pipeline run status**: Check recent pipeline executions:
+         - Success/failure rates over the last 24 hours
+         - Average runtime vs. historical (flag if 2x slower)
+         - Any pipelines stuck in running state
+         - Retry counts and patterns
+
+      4. **Resource utilization**: Check compute and storage:
+         - Processing time trends
+         - Queue depth and backlog
+         - Storage growth rate
+
+
+      Output a health scorecard with RED/YELLOW/GREEN status for each dimension.
+    skills:
+      - datadog
+      - github
+    output:
+      type: object
+      properties:
+        overall_status:
+          type: string
+          enum: [HEALTHY, DEGRADED, CRITICAL]
+        checks:
+          type: object
+          properties:
+            freshness:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [GREEN, YELLOW, RED]
+                stale_tables:
+                  type: array
+                  items:
+                    type: string
+            volume:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [GREEN, YELLOW, RED]
+                anomalies:
+                  type: array
+                  items:
+                    type: string
+            runs:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [GREEN, YELLOW, RED]
+                failure_rate:
+                  type: number
+            resources:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [GREEN, YELLOW, RED]
+      required: [overall_status, checks]
+
+  check-schema-drift:
+    name: Check Schema Drift
+    instruction: >-
+      Detect schema changes that could break downstream consumers:
+
+
+      1. **Compare schemas**: For each monitored table/dataset, compare the current schema
+         against the last known good schema:
+         - Added columns (usually safe)
+         - Removed columns (breaking for consumers that reference them)
+         - Type changes (potentially breaking)
+         - Nullable changes (NOT NULL → NULLABLE safe, reverse is breaking)
+
+      2. **Upstream changes**: Check if upstream data sources have changed their schema.
+         Cross-reference with any schema registry or contract definitions.
+
+      3. **Impact assessment**: For each schema change:
+         - Which downstream pipelines, dashboards, or reports depend on the changed columns?
+         - Will the change cause pipeline failures or silent data quality issues?
+
+      4. **Contract violations**: If schema contracts/expectations are defined (e.g., Great
+         Expectations, dbt tests), check for violations.
+    skills:
+      - github
+      - datadog
+    output:
+      type: object
+      properties:
+        drift_detected:
+          type: boolean
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              table:
+                type: string
+              change:
+                type: string
+              breaking:
+                type: boolean
+              affected_downstream:
+                type: array
+                items:
+                  type: string
+            required: [table, change, breaking]
+      required: [drift_detected]
+
+  check-data-quality:
+    name: Check Data Quality
+    instruction: >-
+      Run data quality checks on recently loaded data:
+
+
+      1. **Null rates**: Check for unexpected nulls in non-nullable business fields.
+         Compare null rates to historical baselines.
+
+      2. **Duplicate detection**: Check for duplicate records in tables that should
+         have unique rows (by primary key or business key).
+
+      3. **Referential integrity**: Verify foreign key relationships are intact.
+         Check for orphaned records.
+
+      4. **Value distributions**: Check that categorical fields have expected values.
+         Flag any new unexpected categories.
+
+      5. **Range checks**: Verify numeric fields are within expected ranges.
+         Flag negative values where they shouldn't exist, or values that are orders
+         of magnitude off from historical data.
+
+      6. **Timeliness**: Check that timestamp fields are reasonable (not in the future,
+         not too far in the past).
+    skills:
+      - datadog
+      - github
+    output:
+      type: object
+      properties:
+        quality_score:
+          type: number
+          description: 0-100 quality score
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              table:
+                type: string
+              check:
+                type: string
+              severity:
+                type: string
+                enum: [CRITICAL, HIGH, MEDIUM, LOW]
+              details:
+                type: string
+            required: [table, check, severity]
+      required: [quality_score]
+
+  routine-report:
+    name: Send Routine Report
+    instruction: >-
+      Send a routine health check report to the team:
+
+
+      1. **Dashboard summary**: Overall pipeline health status with color coding.
+
+      2. **Key metrics**: Freshness compliance, failure rate, data quality score.
+
+      3. **Notable items**: Any YELLOW-status checks that should be watched.
+
+      4. **Trends**: Is health improving or degrading compared to last check?
+
+      5. **Keep it brief** — this is a routine notification, not an incident alert.
+    skills:
+      - slack
+      - notification
+
+  investigate-issue:
+    name: Investigate & Diagnose
+    instruction: >-
+      An issue was detected that needs investigation:
+
+
+      1. **Identify root cause**: Based on the health check findings:
+         - Is it a source data issue (upstream provider problem)?
+         - Is it an infrastructure issue (compute, storage, network)?
+         - Is it a code issue (recent deploy broke a pipeline)?
+         - Is it a data issue (bad input data, schema mismatch)?
+
+      2. **Timeline reconstruction**: When did the issue start? What changed around that time?
+         Check recent deployments, configuration changes, upstream notifications.
+
+      3. **Impact assessment**: What downstream systems are affected?
+         - Which reports/dashboards are showing stale or incorrect data?
+         - Which business processes depend on the affected data?
+         - What is the SLA impact?
+
+      4. **Immediate mitigation**: Suggest steps to mitigate impact:
+         - Can we reprocess from a known good state?
+         - Should we fail over to a backup data source?
+         - Should we pause downstream consumers until fixed?
+    skills:
+      - github
+      - datadog
+
+  escalate:
+    name: Escalate Critical Issue
+    instruction: >-
+      Escalate a critical pipeline issue:
+
+
+      1. **Create an incident ticket** with:
+         - Pipeline name and failure details
+         - Impact assessment (affected tables, downstream consumers)
+         - Timeline of when the issue started
+         - Root cause hypothesis from the investigation
+         - Suggested mitigation steps
+
+      2. **Send urgent notification** with:
+         - Severity level
+         - Business impact summary
+         - Current status and next steps
+         - Who needs to take action
+
+      3. **Tag the on-call team or data engineering lead**.
+    skills:
+      - github
+      - linear
+      - slack
+      - notification
+
+edges:
+  - from: check-pipeline-health
+    to: check-schema-drift
+  - from: check-pipeline-health
+    to: check-data-quality
+  - from: check-schema-drift
+    to: routine-report
+    when: no breaking drift detected
+  - from: check-schema-drift
+    to: investigate-issue
+    when: breaking drift detected
+  - from: check-data-quality
+    to: routine-report
+    when: quality score is above 80
+  - from: check-data-quality
+    to: investigate-issue
+    when: quality score is below 80 or critical issues found
+  - from: check-pipeline-health
+    to: routine-report
+    when: overall status is HEALTHY
+  - from: check-pipeline-health
+    to: investigate-issue
+    when: overall status is DEGRADED or CRITICAL
+  - from: investigate-issue
+    to: routine-report
+    when: issue is minor and self-resolving
+  - from: investigate-issue
+    to: escalate
+    when: issue is critical or requires manual intervention

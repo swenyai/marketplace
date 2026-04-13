@@ -3,6 +3,8 @@ import { join } from "node:path";
 import { parse } from "yaml";
 
 const { parseWorkflow, validateWorkflow } = await import("@sweny-ai/core/schema");
+const { builtinSkills } = await import("@sweny-ai/core");
+const KNOWN_SKILL_IDS = new Set(builtinSkills.map((s) => s.id));
 
 const VALID_CATEGORIES = new Set([
   "triage", "security", "devops", "code-review", "testing", "content", "ops",
@@ -25,7 +27,14 @@ for (const dir of dirs) {
       const parsed = parse(raw);
 
       const workflow = parseWorkflow(parsed);
-      const structuralErrors = validateWorkflow(workflow);
+      // Merge builtin skill IDs with any inline skills defined in this workflow
+      const workflowSkillIds = new Set(KNOWN_SKILL_IDS);
+      if (parsed.skills && typeof parsed.skills === "object") {
+        for (const skillId of Object.keys(parsed.skills)) {
+          workflowSkillIds.add(skillId);
+        }
+      }
+      const structuralErrors = validateWorkflow(workflow, workflowSkillIds);
       for (const e of structuralErrors) {
         errors.push(`[structure] ${e.message}`);
       }

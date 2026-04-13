@@ -21,6 +21,11 @@ const MOCK_WORKFLOW: MarketplaceWorkflow = {
   nodeCount: 1,
   edgeCount: 0,
   skills: ["github"],
+  customSkills: {},
+  derivedVariables: [
+    { name: "ANTHROPIC_API_KEY", description: "Anthropic API key for Claude", required: true, skill: "core" },
+    { name: "GITHUB_TOKEN", description: "GitHub personal access token", required: true, skill: "github" },
+  ],
 };
 
 describe("InstallButton", () => {
@@ -108,14 +113,17 @@ describe("InstallButton", () => {
     expect(link).toHaveAttribute("href", "#");
   });
 
-  it("shows auth token toggles for default variables", async () => {
+  it("generates env block with derived variables", async () => {
     const user = userEvent.setup();
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
+    await user.type(screen.getByPlaceholderText("owner/repo"), "acme/api");
 
-    expect(screen.getByText("ANTHROPIC_API_KEY")).toBeInTheDocument();
-    expect(screen.getByText("CLAUDE_CODE_OAUTH_TOKEN")).toBeInTheDocument();
+    const link = screen.getByText("Open in GitHub").closest("a")!;
+    const href = link.getAttribute("href")!;
+    expect(decodeURIComponent(href)).toContain("ANTHROPIC_API_KEY");
+    expect(decodeURIComponent(href)).toContain("GITHUB_TOKEN");
   });
 
   it("includes workflow ID in generated YAML", async () => {

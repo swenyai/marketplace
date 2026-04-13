@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { DEFAULT_VARIABLES } from "@/lib/types";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { MarketplaceWorkflow } from "@/lib/types";
 
 interface InstallButtonProps {
@@ -16,22 +15,9 @@ export function InstallButton({ workflow }: InstallButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const linkRef = useRef<HTMLAnchorElement>(null);
 
-  const variables = workflow.variables?.length ? workflow.variables : DEFAULT_VARIABLES;
+  const variables = workflow.derivedVariables;
 
-  const [selections, setSelections] = useState<Record<string, number>>(
-    () => Object.fromEntries(variables.map((v) => [v.name, -1]))
-  );
-
-  const resolvedVars = useMemo(() => {
-    return variables.map((v) => {
-      const sel = selections[v.name] ?? -1;
-      if (sel === -1) return { name: v.name, description: v.description };
-      const alt = v.alternatives?.[sel];
-      return alt ? { name: alt.name, description: alt.description } : { name: v.name, description: v.description };
-    });
-  }, [variables, selections]);
-
-  const envBlock = resolvedVars
+  const envBlock = variables
     .map((v) => `          ${v.name}: \${{ secrets.${v.name} }}`)
     .join("\n");
 
@@ -143,36 +129,6 @@ ${envBlock}`;
           className="w-full bg-[#08080f] border border-[#2a2a3a] rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-600 transition"
         />
       </div>
-
-      {/* Variable toggles */}
-      {variables.some((v) => v.alternatives?.length) && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-500">Auth token:</p>
-          {variables
-            .filter((v) => v.alternatives?.length)
-            .map((v) => (
-              <div key={v.name} className="flex items-center gap-2 flex-wrap">
-                {[
-                  { name: v.name, description: v.description, idx: -1 },
-                  ...(v.alternatives ?? []).map((a, i) => ({ ...a, idx: i })),
-                ].map((option) => (
-                  <button
-                    key={option.name}
-                    onClick={() => setSelections((s) => ({ ...s, [v.name]: option.idx }))}
-                    className={`text-[11px] px-2.5 py-1 rounded-md border transition ${
-                      (selections[v.name] ?? -1) === option.idx
-                        ? "bg-blue-950/50 border-blue-700 text-blue-300"
-                        : "bg-[#08080f] border-[#2a2a3a] text-gray-500 hover:text-gray-300"
-                    }`}
-                    title={option.description}
-                  >
-                    {option.name}
-                  </button>
-                ))}
-              </div>
-            ))}
-        </div>
-      )}
 
       <div className="flex items-center gap-2 pt-1">
         {opened ? (

@@ -1,0 +1,252 @@
+id: incident-postmortem
+name: Incident Postmortem
+description: Generate a thorough, blameless postmortem after an incident — gathers timeline, drafts the document, uses an LLM judge to evaluate quality, and iterates until it meets the bar
+author: sweny-ai
+category: ops
+tags: [incident, postmortem, blameless, retrospective, reliability]
+icon: clipboard
+color: cyan
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: gather-timeline
+nodes:
+  gather-timeline:
+    name: Gather Incident Timeline
+    instruction: >-
+      Reconstruct a detailed timeline of the incident from all available sources:
+
+
+      1. **Alerts & monitoring**: Pull the initial alert, all subsequent alerts, and resolution markers.
+         Note exact timestamps (UTC) for: detection, acknowledgment, first mitigation, resolution.
+
+      2. **Deployments**: Check for any deployments in the 6 hours before the incident started.
+         Note commit SHAs, deployers, and timing.
+
+      3. **Code changes**: Identify PRs merged in the window. Flag any that touched the affected service.
+
+      4. **Communication**: If Slack/notification history is available, note when the team was alerted
+         and key decisions made during response.
+
+      5. **Metrics**: Pull relevant metrics (error rates, latency, traffic) to quantify impact.
+         How many users affected? How long was the degradation?
+
+
+      Output a structured timeline with timestamps and a preliminary impact assessment.
+    skills:
+      - github
+      - sentry
+      - datadog
+      - betterstack
+      - linear
+    output:
+      type: object
+      properties:
+        timeline:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+              event:
+                type: string
+              source:
+                type: string
+            required: [timestamp, event]
+        impact:
+          type: object
+          properties:
+            duration_minutes:
+              type: number
+            users_affected:
+              type: string
+            severity:
+              type: string
+              enum: [sev1, sev2, sev3, sev4]
+            services_affected:
+              type: array
+              items:
+                type: string
+          required: [severity, services_affected]
+        trigger:
+          type: string
+          description: What caused the incident (deploy, config change, traffic spike, etc.)
+      required: [timeline, impact, trigger]
+
+  draft-postmortem:
+    name: Draft Postmortem Document
+    instruction: >-
+      Write a blameless postmortem document following industry best practices (Google SRE style).
+
+
+      **Structure:**
+
+      1. **Title**: Clear, descriptive (e.g. "Payment processing 503s due to connection pool exhaustion")
+
+      2. **Summary**: 2-3 sentences covering what happened, impact, and duration.
+
+      3. **Impact**: Quantified — users affected, error rates, revenue impact if estimable.
+
+      4. **Timeline**: Chronological list of events from the gathered data. Use UTC timestamps.
+
+      5. **Root Cause**: Technical explanation of what went wrong. Be specific — name the exact
+         code path, configuration, or system interaction that failed.
+
+      6. **Detection**: How was the incident detected? Was it automated alerting or user-reported?
+         How long from start to detection?
+
+      7. **Response**: What actions were taken? What worked, what didn't?
+
+      8. **Recovery**: How was the service restored? Was it a rollback, hotfix, or config change?
+
+      9. **Lessons Learned**:
+         - What went well (be specific)
+         - What went poorly (be specific)
+         - Where we got lucky
+
+      10. **Action Items**: Concrete, assignable tasks with priority (P0-P3). Each action item must be:
+          - Specific (not "improve monitoring" but "add latency p99 alert on /api/payments at 500ms threshold")
+          - Assignable (name a team or role)
+          - Measurable (how will we know it's done?)
+
+
+      **Tone**: Blameless. Never name individuals as responsible. Focus on systems and processes.
+      Use "we" not "they." Treat human error as a symptom of system design, not a root cause.
+    skills: []
+
+  judge-quality:
+    name: Quality Judge
+    instruction: >-
+      You are a Staff SRE reviewing this postmortem before it's published. Evaluate it critically.
+
+
+      **Score each dimension 1-5:**
+
+      1. **Completeness**: Does it cover all sections? Is the timeline detailed enough to
+         reconstruct what happened without additional context?
+
+      2. **Root cause depth**: Does it go deep enough? "The database was slow" is not a root cause.
+         "Connection pool exhaustion due to leaked connections from the retry logic added in PR #482" is.
+
+      3. **Blamelessness**: Does it avoid naming individuals? Does it frame human actions as
+         system design issues?
+
+      4. **Action items quality**: Are they specific, assignable, measurable, and prioritized?
+         "Improve monitoring" fails. "Add p99 latency alert on /api/payments at 500ms [P1, Platform team]" passes.
+
+      5. **Actionability**: Could someone who wasn't involved read this and understand what happened
+         and what to do about it?
+
+
+      **Overall verdict**: PASS (all dimensions >= 4) or FAIL (any dimension < 4).
+
+
+      If FAIL, provide specific feedback on exactly what needs to improve. Be concrete — quote
+      the weak section and explain what's missing. Do not say "add more detail" — say exactly
+      what detail is missing.
+    skills: []
+    output:
+      type: object
+      properties:
+        scores:
+          type: object
+          properties:
+            completeness:
+              type: number
+            root_cause_depth:
+              type: number
+            blamelessness:
+              type: number
+            action_items:
+              type: number
+            actionability:
+              type: number
+        verdict:
+          type: string
+          enum: [PASS, FAIL]
+        feedback:
+          type: string
+          description: Specific improvement feedback (required if FAIL)
+      required: [scores, verdict]
+
+  refine-postmortem:
+    name: Refine Based on Feedback
+    instruction: >-
+      The quality judge found issues with the postmortem draft. Revise the document
+      to address EVERY piece of feedback.
+
+
+      Rules:
+
+      1. Do not remove content that was already good — only improve weak sections.
+
+      2. Address each specific criticism from the judge's feedback.
+
+      3. If the judge said a root cause was too shallow, dig deeper using the original
+         timeline and gathered data.
+
+      4. If action items were vague, make them specific with owners and measurable outcomes.
+
+      5. After revisions, the document should pass all quality dimensions at >= 4.
+    skills: []
+
+  create-issue:
+    name: Create Action Items
+    instruction: >-
+      Create trackable issues for each action item from the finalized postmortem:
+
+
+      1. For each P0/P1 action item, create an issue with:
+         - Title prefixed with "[Postmortem]"
+         - Full context from the postmortem
+         - Priority label
+         - Link back to the incident
+
+      2. For P2/P3 items, create issues but mark them as lower priority.
+
+      3. If a team/owner is specified, assign or tag appropriately.
+
+      4. Add all issues to a "Postmortem Action Items" project/label for tracking.
+    skills:
+      - github
+      - linear
+
+  publish:
+    name: Publish & Notify
+    instruction: >-
+      Publish the finalized postmortem and notify the team:
+
+
+      1. Create the postmortem as a document:
+         - If Linear is available, create it as a Linear document
+         - Otherwise, create it as a GitHub issue with a "postmortem" label
+
+      2. Send a notification with:
+         - Incident title and severity
+         - Link to the postmortem
+         - Number of action items created
+         - Brief one-line summary
+
+      3. Keep the notification concise — the postmortem document has the details.
+    skills:
+      - github
+      - linear
+      - slack
+      - notification
+
+edges:
+  - from: gather-timeline
+    to: draft-postmortem
+  - from: draft-postmortem
+    to: judge-quality
+  - from: judge-quality
+    to: refine-postmortem
+    when: verdict is FAIL
+  - from: judge-quality
+    to: create-issue
+    when: verdict is PASS
+  - from: refine-postmortem
+    to: judge-quality
+    max_iterations: 3
+  - from: create-issue
+    to: publish

@@ -1,0 +1,234 @@
+id: onboarding-guide
+name: Developer Onboarding Guide
+description: Generate a personalized onboarding guide for new developers — analyze the codebase architecture, identify key patterns, create learning paths, and produce a comprehensive starter document
+author: sweny-ai
+category: content
+tags: [onboarding, documentation, architecture, developer-experience, knowledge-base]
+icon: book-open
+color: green
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: analyze-codebase
+nodes:
+  analyze-codebase:
+    name: Analyze Codebase Architecture
+    instruction: >-
+      Build a comprehensive understanding of the codebase for a new developer:
+
+
+      1. **Project structure**: Map the directory structure and explain what each
+         top-level directory contains. Identify monorepo packages if applicable.
+
+      2. **Tech stack**: Identify all major technologies:
+         - Languages and versions
+         - Frameworks (React, Express, Django, etc.)
+         - Databases
+         - Infrastructure (Docker, Kubernetes, cloud services)
+         - Build tools and package managers
+
+      3. **Architecture patterns**: Identify the architectural style:
+         - Monolith, microservices, serverless, or hybrid?
+         - MVC, clean architecture, event-driven, etc.?
+         - API style (REST, GraphQL, gRPC)?
+
+      4. **Entry points**: Find the main entry points:
+         - Server startup files
+         - API route definitions
+         - CLI entry points
+         - Background job processors
+
+      5. **Key abstractions**: Identify the core domain models, services, and
+         utilities that a developer will interact with most frequently.
+
+      6. **Configuration**: How is the project configured? Environment variables,
+         config files, feature flags.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        tech_stack:
+          type: array
+          items:
+            type: string
+        architecture:
+          type: string
+        entry_points:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              purpose:
+                type: string
+            required: [file, purpose]
+        key_directories:
+          type: array
+          items:
+            type: object
+            properties:
+              path:
+                type: string
+              purpose:
+                type: string
+            required: [path, purpose]
+      required: [tech_stack, architecture, entry_points]
+
+  analyze-patterns:
+    name: Analyze Code Patterns & Conventions
+    instruction: >-
+      Identify the patterns and conventions a new developer needs to follow:
+
+
+      1. **Code style**: Detect linting and formatting rules:
+         - ESLint/Prettier/Black/rustfmt configuration
+         - Naming conventions (camelCase, snake_case, etc.)
+         - File naming patterns
+
+      2. **Testing patterns**: How are tests written?
+         - Test framework and runner
+         - Test file location convention (co-located, separate test dir)
+         - Mocking patterns
+         - Test data fixtures
+         - What's the test coverage expectation?
+
+      3. **Error handling**: How does the codebase handle errors?
+         - Custom error classes
+         - Error middleware
+         - Logging patterns
+
+      4. **Data access patterns**: How does the code interact with data?
+         - ORM, query builder, or raw SQL?
+         - Repository pattern, active record, or direct access?
+         - Migration conventions
+
+      5. **API patterns**: For APIs, what's the standard pattern for:
+         - Route definitions
+         - Request validation
+         - Authentication/authorization
+         - Response formatting
+
+      6. **Git conventions**: Branch naming, commit message format, PR template.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        conventions:
+          type: array
+          items:
+            type: object
+            properties:
+              category:
+                type: string
+              pattern:
+                type: string
+              example_file:
+                type: string
+            required: [category, pattern]
+      required: [conventions]
+
+  analyze-dev-workflow:
+    name: Analyze Development Workflow
+    instruction: >-
+      Document the development workflow from setup to deployment:
+
+
+      1. **Local setup**: What steps are needed to get the project running locally?
+         - Prerequisites (runtime versions, system dependencies)
+         - Installation commands
+         - Database setup / seed data
+         - Environment variables needed
+         - Common setup issues and fixes
+
+      2. **Development loop**: How does a developer work on a feature?
+         - Branch from what? (main, develop, release?)
+         - Run tests: what command, how long do they take?
+         - Local development server: how to start, what port?
+         - Hot reload available?
+
+      3. **CI/CD**: What happens when code is pushed?
+         - What checks run?
+         - How long does CI take?
+         - What causes CI failures?
+
+      4. **Deployment**: How does code get to production?
+         - Automatic on merge to main?
+         - Manual release process?
+         - Staging environment available?
+
+      5. **Common tasks**: Document frequent developer tasks:
+         - Adding a new API endpoint
+         - Adding a database migration
+         - Adding a new test
+    skills:
+      - github
+
+  generate-guide:
+    name: Generate Onboarding Document
+    instruction: >-
+      Write a comprehensive onboarding guide combining all the analysis:
+
+
+      **Structure:**
+
+      1. **Welcome & Overview** (2-3 paragraphs): What does this project do? Who uses it?
+         What's the business context a new developer should understand?
+
+      2. **Quick Start**: Step-by-step setup instructions that get a developer from
+         clone to running tests in under 15 minutes. Number every step.
+
+      3. **Architecture Overview**: High-level architecture with data flow description.
+         Explain how the major components interact.
+
+      4. **Key Concepts**: The domain concepts and abstractions a developer must understand.
+         Use analogies where helpful.
+
+      5. **Code Conventions**: The patterns and rules to follow. Include "do this, not that"
+         examples from the actual codebase.
+
+      6. **Development Workflow**: Daily development process from branch to merge.
+
+      7. **Common Tasks**: Step-by-step guides for the most frequent development tasks.
+
+      8. **Troubleshooting**: Common issues and their solutions.
+
+      9. **Resources**: Links to documentation, design docs, team contacts.
+
+
+      **Style**: Write for someone smart but completely new to the codebase. Explain
+      jargon. Use concrete examples from the actual code. Keep it practical.
+    skills:
+      - github
+
+  publish:
+    name: Publish Onboarding Guide
+    instruction: >-
+      Publish the onboarding guide:
+
+
+      1. Save the guide as a markdown file in the repository
+         (docs/onboarding.md or ONBOARDING.md).
+
+      2. If a wiki exists, also publish there.
+
+      3. Send a notification that the onboarding guide is available, with a link.
+
+      4. Suggest adding the guide to the repo README for discoverability.
+    skills:
+      - github
+      - slack
+      - notification
+
+edges:
+  - from: analyze-codebase
+    to: analyze-patterns
+  - from: analyze-codebase
+    to: analyze-dev-workflow
+  - from: analyze-patterns
+    to: generate-guide
+  - from: analyze-dev-workflow
+    to: generate-guide
+  - from: generate-guide
+    to: publish

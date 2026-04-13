@@ -1,0 +1,227 @@
+id: bug-reproducer
+name: Bug Reproducer
+description: Read a bug report, write a failing test that reproduces the bug, iterate until the test reliably demonstrates the issue, then report findings with reproduction steps
+author: sweny-ai
+category: testing
+tags: [bugs, testing, reproduction, tdd, automated, issue-triage]
+icon: bug
+color: red
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: read-bug-report
+nodes:
+  read-bug-report:
+    name: Read & Analyze Bug Report
+    instruction: >-
+      Parse the bug report to extract all information needed to reproduce the issue:
+
+
+      1. **Extract symptoms**: What is the user observing? Error messages, unexpected behavior,
+         missing functionality, performance issues.
+
+      2. **Identify environment**: OS, browser, runtime version, deployment environment.
+         Note any specific configuration mentioned.
+
+      3. **Find reproduction steps**: Extract the user's steps to reproduce, if provided.
+         If not provided, infer from the description.
+
+      4. **Locate affected code**: Based on the symptoms and stack traces, identify:
+         - The specific file(s) and function(s) likely involved
+         - The code path that leads to the bug
+         - Related test files that exist
+
+      5. **Check for duplicates**: Search existing issues and recently closed bugs for similar reports.
+
+      6. **Pull error context**: If Sentry is available, pull the full stack trace, breadcrumbs,
+         and frequency data for this error.
+
+
+      Output a structured analysis with enough detail to write a reproduction test.
+    skills:
+      - github
+      - linear
+      - sentry
+    output:
+      type: object
+      properties:
+        summary:
+          type: string
+        symptoms:
+          type: array
+          items:
+            type: string
+        reproduction_steps:
+          type: array
+          items:
+            type: string
+        affected_code:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              function:
+                type: string
+              line:
+                type: number
+            required: [file]
+        stack_trace:
+          type: string
+        existing_tests:
+          type: array
+          items:
+            type: string
+        confidence:
+          type: string
+          enum: [HIGH, MEDIUM, LOW]
+          description: Confidence in understanding the root cause
+      required: [summary, symptoms, affected_code, confidence]
+
+  write-reproduction-test:
+    name: Write Reproduction Test
+    instruction: >-
+      Write a test that demonstrates the bug:
+
+
+      1. **Choose test location**: Place the test in the appropriate test file, following
+         the project's existing test organization.
+
+      2. **Setup**: Create the minimal setup needed to trigger the bug:
+         - Required fixtures and mocks
+         - Specific input data that triggers the issue
+         - Environment or configuration setup
+
+      3. **Write the test**: The test should:
+         - Be named descriptively: `test_should_not_crash_when_input_is_empty`
+         - Follow the project's existing test patterns and framework
+         - Assert the EXPECTED (correct) behavior, not the buggy behavior
+         - This means the test should FAIL with the current code
+
+      4. **Add comments**: Explain what the test verifies and reference the bug report:
+         - Link to the issue
+         - Describe why this input triggers the bug
+         - Note what the correct behavior should be
+
+      5. **Keep it minimal**: The test should be the smallest possible reproduction.
+         Remove any setup that isn't directly related to the bug.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        test_file:
+          type: string
+        test_name:
+          type: string
+        test_code:
+          type: string
+      required: [test_file, test_name]
+
+  run-test:
+    name: Run Reproduction Test
+    instruction: >-
+      Execute the reproduction test and analyze the results:
+
+
+      1. **Run the test**: Execute just the reproduction test using the project's test runner.
+
+      2. **Analyze the result**:
+         - **FAILS as expected**: The test demonstrates the bug. The failure message matches
+           the reported symptoms. This is the desired outcome — the test reproduces the bug.
+         - **PASSES unexpectedly**: The test doesn't reproduce the bug. Either the test setup
+           is wrong, the bug is environment-specific, or the analysis was incorrect.
+         - **ERRORS**: The test itself has bugs (syntax errors, missing imports, bad setup).
+
+      3. **Check for flakiness**: Run the test 3 times. If it sometimes passes and sometimes fails,
+         it may be a race condition — note this in the output.
+
+      4. **Collect diagnostics**: Capture the full test output, including:
+         - Assertion failure messages
+         - Stack traces
+         - Actual vs expected values
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        result:
+          type: string
+          enum: [REPRODUCES, NOT_REPRODUCED, TEST_ERROR]
+        failure_message:
+          type: string
+        is_flaky:
+          type: boolean
+        diagnostics:
+          type: string
+      required: [result]
+
+  refine-test:
+    name: Refine Reproduction Test
+    instruction: >-
+      The test didn't reproduce the bug or had errors. Revise it:
+
+
+      1. **If TEST_ERROR**: Fix the test code — missing imports, bad assertions, setup issues.
+
+      2. **If NOT_REPRODUCED**: Re-analyze the bug report:
+         - Is the test using the right input data?
+         - Is the test hitting the correct code path?
+         - Does the bug require specific timing or ordering?
+         - Is there a missing mock or fixture?
+         - Does the bug only occur with specific data shapes or sizes?
+
+      3. **Try alternative approaches**:
+         - Use different input values
+         - Test at a different level (unit vs integration)
+         - Add more specific assertions
+         - Mock different dependencies
+
+      4. **If the bug seems environment-specific**: Note this and write a test that at minimum
+         validates the fix once implemented (test the expected behavior even if you can't
+         trigger the failure).
+    skills:
+      - github
+
+  report-findings:
+    name: Report Reproduction Results
+    instruction: >-
+      Create a detailed reproduction report:
+
+
+      1. **Update the issue** with findings:
+         - Whether the bug was successfully reproduced
+         - The reproduction test (file path and test name)
+         - Root cause analysis (if identified)
+         - Suggested fix approach (if obvious from the reproduction)
+
+      2. **If reproduced**:
+         - Link to the test file
+         - Include the exact failure output
+         - Describe the root cause discovered during reproduction
+         - Suggest a fix if one is apparent
+
+      3. **If not reproduced after iterations**:
+         - Explain what was tried
+         - Note the test that was written for expected behavior
+         - Suggest what additional context is needed (specific environment, data, etc.)
+
+      4. **Update issue labels**: Add "reproduced" or "needs-info" label.
+    skills:
+      - github
+      - linear
+
+edges:
+  - from: read-bug-report
+    to: write-reproduction-test
+  - from: write-reproduction-test
+    to: run-test
+  - from: run-test
+    to: report-findings
+    when: result is REPRODUCES
+  - from: run-test
+    to: refine-test
+    when: result is NOT_REPRODUCED or TEST_ERROR
+  - from: refine-test
+    to: run-test
+    max_iterations: 5

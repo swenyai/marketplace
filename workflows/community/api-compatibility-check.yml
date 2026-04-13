@@ -1,0 +1,255 @@
+id: api-compatibility-check
+name: API Compatibility Check
+description: Analyze API changes across versions for backwards compatibility — parallel checks for REST endpoints, types/schemas, and behavior changes — then generate a migration guide
+author: sweny-ai
+category: code-review
+tags: [api, compatibility, breaking-changes, semver, migration, parallel]
+icon: git-compare
+color: orange
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: detect-api-changes
+nodes:
+  detect-api-changes:
+    name: Detect API Surface Changes
+    instruction: >-
+      Compare the current branch against the base branch to identify all API surface changes:
+
+
+      1. **Find API boundaries**: Identify public API files:
+         - REST: Route definitions, OpenAPI specs, handler files
+         - GraphQL: Schema files, resolver changes
+         - Library: Exported functions, types, classes
+         - CLI: Command definitions, flag changes
+
+      2. **Diff analysis**: For each API boundary file, extract:
+         - Added endpoints/functions
+         - Removed endpoints/functions
+         - Modified signatures (parameters, return types)
+         - Changed default values
+
+      3. **Classify changes**:
+         - ADDITION: New API surface (backwards compatible)
+         - MODIFICATION: Changed existing API (needs analysis)
+         - REMOVAL: Deleted API surface (breaking)
+         - DEPRECATION: Marked as deprecated (compatible with notice)
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              api:
+                type: string
+              type:
+                type: string
+                enum: [ADDITION, MODIFICATION, REMOVAL, DEPRECATION]
+              file:
+                type: string
+              details:
+                type: string
+            required: [api, type, file]
+        api_type:
+          type: string
+          enum: [REST, GraphQL, Library, CLI, Mixed]
+      required: [changes, api_type]
+
+  check-endpoint-compat:
+    name: REST/GraphQL Endpoint Compatibility
+    instruction: >-
+      For each modified or removed endpoint, check backwards compatibility:
+
+
+      1. **URL/path changes**: Did the URL change? Path parameter renames break clients.
+
+      2. **HTTP method changes**: Did the method change (e.g., POST → PUT)?
+
+      3. **Request body changes**:
+         - New required fields = breaking (old clients won't send them)
+         - New optional fields = compatible
+         - Removed fields = breaking if clients send them (server may reject)
+         - Changed field types = breaking
+
+      4. **Response body changes**:
+         - Added fields = compatible (clients should ignore unknown fields)
+         - Removed fields = breaking (clients may depend on them)
+         - Changed field types = breaking
+         - Changed nesting/structure = breaking
+
+      5. **Status code changes**: Different status codes for same scenarios = breaking.
+
+      6. **Auth changes**: Changed auth requirements = breaking.
+
+
+      For each breaking change, note the specific field/path and why it breaks clients.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              endpoint:
+                type: string
+              breaking:
+                type: boolean
+              issues:
+                type: array
+                items:
+                  type: string
+            required: [endpoint, breaking]
+      required: [findings]
+
+  check-type-compat:
+    name: Type & Schema Compatibility
+    instruction: >-
+      Analyze type and schema changes for backwards compatibility:
+
+
+      1. **TypeScript/Flow types**: Check exported types and interfaces:
+         - Added required properties = breaking for implementors
+         - Removed properties = breaking for consumers
+         - Changed property types (widening OK, narrowing breaks)
+         - Union type changes (adding variants OK, removing breaks)
+
+      2. **Database schemas**: Check migration files:
+         - Column removals = breaking
+         - NOT NULL additions without defaults = breaking
+         - Type changes = potentially breaking
+
+      3. **Protobuf/JSON Schema**: Check schema files:
+         - Field number reuse = breaking (protobuf)
+         - Required field additions = breaking
+         - Enum value removals = breaking
+
+      4. **Config schemas**: Check configuration file formats:
+         - New required config = breaking (existing configs won't have it)
+         - Removed config = breaking if still referenced
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              type_name:
+                type: string
+              file:
+                type: string
+              breaking:
+                type: boolean
+              issues:
+                type: array
+                items:
+                  type: string
+            required: [type_name, breaking]
+      required: [findings]
+
+  check-behavior-compat:
+    name: Behavioral Compatibility
+    instruction: >-
+      Check for behavioral changes that don't show up in type signatures:
+
+
+      1. **Default value changes**: Changed defaults can break existing behavior without
+         changing the API signature. Review all default value modifications.
+
+      2. **Error handling changes**: Did error types, messages, or conditions change?
+         Clients may parse error messages or handle specific error types.
+
+      3. **Side effects**: Did the function start doing something it didn't before
+         (sending emails, writing logs, creating files)?
+
+      4. **Performance characteristics**: Significant performance regressions in public APIs
+         (e.g., O(n) → O(n²)) should be flagged.
+
+      5. **Ordering/sorting**: Changed default sort order or iteration order breaks
+         clients that depend on it.
+
+      6. **Null/undefined handling**: Changed behavior for edge case inputs
+         (null, empty string, negative numbers) is a common source of breaking changes.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              change:
+                type: string
+              breaking:
+                type: boolean
+              severity:
+                type: string
+                enum: [HIGH, MEDIUM, LOW]
+              details:
+                type: string
+            required: [change, breaking, severity]
+      required: [findings]
+
+  generate-report:
+    name: Generate Compatibility Report & Migration Guide
+    instruction: >-
+      Synthesize all compatibility findings into a report and migration guide:
+
+
+      1. **Semver recommendation**: Based on the findings:
+         - PATCH: No breaking changes, bug fixes only
+         - MINOR: New features, no breaking changes
+         - MAJOR: Any breaking changes found
+
+      2. **Breaking changes summary**: List all breaking changes with:
+         - What changed
+         - Who is affected (API consumers, library users, etc.)
+         - Severity (how many users likely affected)
+
+      3. **Migration guide**: For each breaking change, provide:
+         - Before/after code examples
+         - Step-by-step migration instructions
+         - Workarounds for gradual migration
+
+      4. **Deprecation notices**: For any deprecated APIs:
+         - What to use instead
+         - Timeline for removal (if known)
+
+      5. **Post as PR comment** with the full report.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        semver:
+          type: string
+          enum: [PATCH, MINOR, MAJOR]
+        breaking_count:
+          type: number
+        report:
+          type: string
+      required: [semver, breaking_count]
+
+edges:
+  - from: detect-api-changes
+    to: check-endpoint-compat
+  - from: detect-api-changes
+    to: check-type-compat
+  - from: detect-api-changes
+    to: check-behavior-compat
+  - from: check-endpoint-compat
+    to: generate-report
+  - from: check-type-compat
+    to: generate-report
+  - from: check-behavior-compat
+    to: generate-report

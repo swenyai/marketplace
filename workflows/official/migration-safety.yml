@@ -1,0 +1,298 @@
+id: migration-safety
+name: Migration Safety Check
+description: Run parallel safety checks on database migrations — schema analysis, data impact assessment, and rollback verification — then converge to a go/no-go decision
+author: sweny-ai
+category: devops
+tags: [database, migrations, safety, schema, rollback, parallel]
+icon: database
+color: amber
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: detect-migrations
+nodes:
+  detect-migrations:
+    name: Detect Pending Migrations
+    instruction: >-
+      Find all pending database migration files that haven't been applied to production:
+
+
+      1. **Locate migrations**: Search for migration files in common locations:
+         `db/migrate/`, `migrations/`, `prisma/migrations/`, `drizzle/`, `alembic/versions/`,
+         `src/migrations/`, `packages/*/migrations/`.
+
+      2. **Identify pending**: Compare against the latest applied migration marker
+         (migration table dump, version file, or git history).
+
+      3. **Extract SQL**: For each pending migration, extract the actual SQL that will run.
+         For ORM migrations (Prisma, Drizzle, Alembic), note the schema changes.
+
+      4. **Identify affected tables**: List every table that will be modified, created, or dropped.
+
+      5. **Pull table stats** (if Datadog available): Get row counts and size for affected tables
+         to assess impact of ALTER operations.
+
+
+      Output a structured list of migrations with their SQL and affected tables.
+    skills:
+      - github
+      - datadog
+    output:
+      type: object
+      properties:
+        migrations:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              sql:
+                type: string
+              tables_affected:
+                type: array
+                items:
+                  type: string
+              orm:
+                type: string
+            required: [file, tables_affected]
+        table_stats:
+          type: object
+          description: Map of table name to row count and size
+      required: [migrations]
+
+  check-schema-safety:
+    name: Schema Safety Analysis
+    instruction: >-
+      Analyze each migration for schema-level safety issues:
+
+
+      1. **Destructive operations**: Flag any DROP TABLE, DROP COLUMN, or column type narrowing
+         (e.g., VARCHAR(255) → VARCHAR(50), INT → SMALLINT). These cause data loss.
+
+      2. **Locking operations**: Identify operations that acquire exclusive locks on large tables:
+         - ALTER TABLE with NOT NULL on existing column (full table rewrite on Postgres < 11)
+         - CREATE INDEX without CONCURRENTLY
+         - RENAME TABLE / RENAME COLUMN
+
+      3. **Data type changes**: Flag implicit type conversions that may fail on existing data
+         (e.g., VARCHAR → INT when column contains non-numeric values).
+
+      4. **Default values**: Check if new NOT NULL columns have defaults. Without a default,
+         the migration will fail if the table has existing rows.
+
+      5. **Index impact**: Assess new indexes on large tables — estimate lock time and disk usage.
+
+      6. **Foreign key safety**: Flag new foreign keys on populated tables without validation skip.
+
+
+      For each issue, classify severity: BLOCKER (will fail or lose data), WARNING (may cause
+      downtime), INFO (worth noting but safe).
+    skills: []
+    output:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              migration_file:
+                type: string
+              severity:
+                type: string
+                enum: [BLOCKER, WARNING, INFO]
+              issue:
+                type: string
+              recommendation:
+                type: string
+            required: [migration_file, severity, issue, recommendation]
+      required: [issues]
+
+  check-rollback-plan:
+    name: Rollback Verification
+    instruction: >-
+      Verify that every migration has a safe rollback path:
+
+
+      1. **Down migration exists**: Check that each up migration has a corresponding down/rollback
+         migration. For ORMs, verify the rollback generates correct SQL.
+
+      2. **Rollback correctness**: Verify the down migration actually reverses the up migration.
+         A DROP COLUMN rollback must recreate the column with correct type, constraints, and default.
+
+      3. **Data preservation**: If the up migration transforms data (backfill, merge columns, etc.),
+         can the rollback recover the original data? Flag irreversible data transformations.
+
+      4. **Rollback ordering**: If there are multiple migrations, verify they can be rolled back
+         in reverse order without dependency issues.
+
+      5. **Partial failure**: What happens if the migration fails midway? Is each migration
+         wrapped in a transaction? For Postgres, DDL is transactional. For MySQL, it's not —
+         flag non-transactional DDL in MySQL migrations.
+
+
+      Rate rollback readiness: READY (all rollbacks verified), PARTIAL (some gaps), NONE (no rollbacks).
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        rollback_status:
+          type: string
+          enum: [READY, PARTIAL, NONE]
+        details:
+          type: array
+          items:
+            type: object
+            properties:
+              migration_file:
+                type: string
+              has_rollback:
+                type: boolean
+              issues:
+                type: string
+            required: [migration_file, has_rollback]
+      required: [rollback_status, details]
+
+  check-data-impact:
+    name: Data Impact Assessment
+    instruction: >-
+      Assess the data impact of pending migrations:
+
+
+      1. **Row count estimation**: For ALTER TABLE operations, estimate affected row count.
+         Operations on tables with >1M rows need special attention.
+
+      2. **Backfill analysis**: If the migration includes data backfills (UPDATE, INSERT...SELECT),
+         estimate the time and lock impact. Large backfills should be batched.
+
+      3. **Storage impact**: Estimate additional disk usage from new indexes, columns, or tables.
+         Flag if the migration could cause disk pressure.
+
+      4. **Query plan impact**: Will new indexes improve or degrade existing query performance?
+         Check for redundant indexes or indexes that won't be used.
+
+      5. **Application compatibility**: Check if the application code is compatible with both
+         the pre-migration and post-migration schema. This enables zero-downtime deploys.
+         Flag any migration that requires a code deploy to happen simultaneously.
+
+
+      Output a risk assessment with estimated execution time for each migration.
+    skills:
+      - github
+      - datadog
+    output:
+      type: object
+      properties:
+        assessments:
+          type: array
+          items:
+            type: object
+            properties:
+              migration_file:
+                type: string
+              estimated_rows_affected:
+                type: number
+              estimated_duration:
+                type: string
+              risk_level:
+                type: string
+                enum: [LOW, MEDIUM, HIGH, CRITICAL]
+              notes:
+                type: string
+            required: [migration_file, risk_level]
+      required: [assessments]
+
+  go-no-go:
+    name: Go/No-Go Decision
+    instruction: >-
+      Synthesize all safety check results into a final go/no-go decision:
+
+
+      1. **Aggregate findings**: Combine schema safety issues, rollback status, and data impact
+         assessments into a unified view.
+
+      2. **Decision criteria**:
+         - **GO**: No BLOCKERs, rollback status is READY, no CRITICAL data impact
+         - **GO WITH CAUTION**: Warnings present but manageable, rollback is PARTIAL, max HIGH data impact
+         - **NO-GO**: Any BLOCKER found, rollback status is NONE, or CRITICAL data impact
+
+      3. **Execution plan**: If GO or GO WITH CAUTION, provide:
+         - Recommended execution order
+         - Estimated total migration time
+         - Monitoring checklist (what to watch during migration)
+         - Rollback trigger conditions (when to abort)
+
+      4. **Required fixes**: If NO-GO, list every issue that must be resolved before re-evaluation.
+         Be specific — "add rollback for 003_add_users_index.sql" not "fix rollbacks."
+
+
+      The decision must be defensible — cite specific findings from each check.
+    skills: []
+    output:
+      type: object
+      properties:
+        decision:
+          type: string
+          enum: [GO, GO_WITH_CAUTION, NO_GO]
+        blockers:
+          type: array
+          items:
+            type: string
+        warnings:
+          type: array
+          items:
+            type: string
+        execution_plan:
+          type: object
+          properties:
+            order:
+              type: array
+              items:
+                type: string
+            estimated_total_time:
+              type: string
+            monitoring_checklist:
+              type: array
+              items:
+                type: string
+            rollback_triggers:
+              type: array
+              items:
+                type: string
+      required: [decision]
+
+  notify-result:
+    name: Notify Team
+    instruction: >-
+      Send a notification with the migration safety check results:
+
+
+      1. Include the go/no-go decision prominently.
+
+      2. If NO-GO: List the blockers that need to be fixed.
+
+      3. If GO WITH CAUTION: List the warnings and monitoring steps.
+
+      4. If GO: Confirm the execution plan and estimated time.
+
+      5. Keep it concise — link to the full report for details.
+    skills:
+      - slack
+      - notification
+
+edges:
+  - from: detect-migrations
+    to: check-schema-safety
+  - from: detect-migrations
+    to: check-rollback-plan
+  - from: detect-migrations
+    to: check-data-impact
+  - from: check-schema-safety
+    to: go-no-go
+  - from: check-rollback-plan
+    to: go-no-go
+  - from: check-data-impact
+    to: go-no-go
+  - from: go-no-go
+    to: notify-result

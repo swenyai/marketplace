@@ -8,24 +8,6 @@ icon: alert-triangle
 color: blue
 version: 1.0.0
 sweny_version: ">=4.0.0"
-variables:
-  - name: ANTHROPIC_API_KEY
-    description: Anthropic API key for Claude
-    required: true
-    alternatives:
-      - name: CLAUDE_CODE_OAUTH_TOKEN
-        description: Claude Code OAuth token
-  - name: GITHUB_TOKEN
-    description: GitHub token for repo access
-    required: true
-  - name: LINEAR_API_KEY
-    description: Linear API key for issue tracking
-  - name: SENTRY_AUTH_TOKEN
-    description: Sentry auth token for error monitoring
-  - name: DATADOG_API_KEY
-    description: Datadog API key for metrics and logs
-  - name: SLACK_WEBHOOK_URL
-    description: Slack webhook for notifications
 entry: prepare
 nodes:
   prepare:
