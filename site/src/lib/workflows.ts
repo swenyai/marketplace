@@ -2,8 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse } from "yaml";
 import { parseWorkflow, validateWorkflow } from "@sweny-ai/core/schema";
+import { builtinSkills } from "@sweny-ai/core";
 import type { MarketplaceWorkflow, MarketplaceMetadata, Category, CardColor, DerivedVariable } from "./types";
 import { SKILL_CONFIG } from "./types";
+
+const KNOWN_SKILL_IDS = new Set(builtinSkills.map((s) => s.id));
 
 const WORKFLOWS_DIR = path.resolve(process.cwd(), "../workflows");
 
@@ -60,7 +63,14 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
 
     try {
       const workflow = parseWorkflow(parsed);
-      const errors = validateWorkflow(workflow);
+      // Merge builtin skill IDs with any inline skills defined in this workflow
+      const workflowSkillIds = new Set(KNOWN_SKILL_IDS);
+      if (parsed.skills && typeof parsed.skills === "object") {
+        for (const skillId of Object.keys(parsed.skills)) {
+          workflowSkillIds.add(skillId);
+        }
+      }
+      const errors = validateWorkflow(workflow, workflowSkillIds);
       if (errors.length > 0) {
         console.warn(`Skipping ${file}: ${errors.map((e) => e.message).join(", ")}`);
         continue;

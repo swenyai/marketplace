@@ -4,7 +4,6 @@ export interface WorkflowVariable {
   name: string;
   description: string;
   required?: boolean;
-  alternatives?: { name: string; description: string }[];
 }
 
 export interface DerivedVariable {
@@ -19,8 +18,14 @@ export interface DerivedVariable {
  * Derived from @sweny-ai/core/skills/*.ts — kept static because
  * the marketplace site can't import the Node-only skill modules.
  */
+/**
+ * Static map of builtin skill ID → config fields.
+ * Must match @sweny-ai/core builtinSkills exactly.
+ * Kept static because the marketplace site can't import the Node-only skill modules.
+ * Run `npm run check:skills` to verify parity with core.
+ */
 export const SKILL_CONFIG: Record<string, { env: string; description: string; required: boolean }[]> = {
-  github: [{ env: "GITHUB_TOKEN", description: "GitHub personal access token or installation token", required: true }],
+  github: [{ env: "GITHUB_TOKEN", description: "GitHub personal access token or app installation token", required: true }],
   linear: [{ env: "LINEAR_API_KEY", description: "Linear API key", required: true }],
   slack: [
     { env: "SLACK_WEBHOOK_URL", description: "Slack incoming webhook URL", required: false },
@@ -29,24 +34,28 @@ export const SKILL_CONFIG: Record<string, { env: string; description: string; re
   sentry: [
     { env: "SENTRY_AUTH_TOKEN", description: "Sentry authentication token", required: true },
     { env: "SENTRY_ORG", description: "Sentry organization slug", required: true },
+    { env: "SENTRY_BASE_URL", description: "Sentry base URL (default: https://sentry.io)", required: false },
   ],
   datadog: [
     { env: "DD_API_KEY", description: "Datadog API key", required: true },
     { env: "DD_APP_KEY", description: "Datadog application key", required: true },
+    { env: "DD_SITE", description: "Datadog site (e.g., datadoghq.eu). Default: datadoghq.com", required: false },
   ],
   betterstack: [
-    { env: "BETTERSTACK_API_TOKEN", description: "BetterStack Telemetry API token", required: true },
-    { env: "BETTERSTACK_QUERY_ENDPOINT", description: "ClickHouse HTTP endpoint", required: true },
+    { env: "BETTERSTACK_API_TOKEN", description: "BetterStack Telemetry API token (team-scoped)", required: true },
+    { env: "BETTERSTACK_QUERY_ENDPOINT", description: "ClickHouse HTTP endpoint (e.g. https://eu-fsn-3-connect.betterstackdata.com)", required: true },
+    { env: "BETTERSTACK_QUERY_USERNAME", description: "ClickHouse connection username", required: true },
+    { env: "BETTERSTACK_QUERY_PASSWORD", description: "ClickHouse connection password", required: true },
   ],
   notification: [
-    { env: "NOTIFICATION_WEBHOOK_URL", description: "Generic webhook URL", required: false },
+    { env: "NOTIFICATION_WEBHOOK_URL", description: "Generic webhook URL for notifications", required: false },
     { env: "DISCORD_WEBHOOK_URL", description: "Discord webhook URL", required: false },
     { env: "TEAMS_WEBHOOK_URL", description: "Microsoft Teams webhook URL", required: false },
-    { env: "SMTP_URL", description: "SMTP connection URL for email", required: false },
+    { env: "SMTP_URL", description: "SMTP connection URL for email notifications", required: false },
   ],
   supabase: [
-    { env: "SUPABASE_URL", description: "Supabase project URL", required: true },
-    { env: "SUPABASE_SERVICE_ROLE_KEY", description: "Supabase service role key", required: true },
+    { env: "SUPABASE_URL", description: "Supabase project URL (e.g., https://xxxx.supabase.co)", required: true },
+    { env: "SUPABASE_SERVICE_ROLE_KEY", description: "Supabase service role key (full access, server-side only)", required: true },
   ],
 };
 
