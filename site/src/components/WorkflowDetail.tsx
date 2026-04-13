@@ -157,7 +157,7 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
                       {customDef?.name ?? skill}
                     </span>
                     {isCustom && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded ${hasMcp ? "bg-purple-950/50 text-purple-400" : "bg-green-950/50 text-green-400"}`}>
+                      <span className={`text-[11px] px-1.5 py-0.5 rounded ${hasMcp ? "bg-purple-950/50 text-purple-400" : "bg-green-950/50 text-green-400"}`}>
                         {hasMcp ? "MCP" : "instruction"}
                       </span>
                     )}

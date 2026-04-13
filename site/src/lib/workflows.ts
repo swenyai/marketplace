@@ -2,13 +2,50 @@ import fs from "node:fs";
 import path from "node:path";
 import { parse } from "yaml";
 import { parseWorkflow, validateWorkflow } from "@sweny-ai/core/schema";
-import type { MarketplaceWorkflow, MarketplaceMetadata, Category, CardColor } from "./types";
+import type { MarketplaceWorkflow, MarketplaceMetadata, Category, CardColor, DerivedVariable } from "./types";
+import { SKILL_CONFIG } from "./types";
 
 const WORKFLOWS_DIR = path.resolve(process.cwd(), "../workflows");
 
 const VALID_CATEGORIES = new Set<string>([
   "triage", "security", "devops", "code-review", "testing", "content", "ops",
 ]);
+
+/**
+ * Derive required environment variables from a workflow's skills.
+ * Always includes ANTHROPIC_API_KEY first.
+ * Merges with manual variables from YAML (if any) for override descriptions.
+ */
+function deriveVariables(skillIds: string[], manualVars?: Array<{ name: string; description?: string; required?: boolean }>): DerivedVariable[] {
+  const vars: DerivedVariable[] = [
+    { name: "ANTHROPIC_API_KEY", description: "Anthropic API key for Claude", required: true, skill: "core" },
+  ];
+  const seen = new Set<string>(["ANTHROPIC_API_KEY"]);
+
+  // Build a lookup from manual variables for description overrides
+  const manualLookup = new Map<string, { description?: string; required?: boolean }>();
+  if (manualVars) {
+    for (const v of manualVars) manualLookup.set(v.name, v);
+  }
+
+  for (const skillId of skillIds) {
+    const fields = SKILL_CONFIG[skillId];
+    if (!fields) continue;
+    for (const field of fields) {
+      if (seen.has(field.env)) continue;
+      seen.add(field.env);
+      const manual = manualLookup.get(field.env);
+      vars.push({
+        name: field.env,
+        description: manual?.description ?? field.description,
+        required: manual?.required ?? field.required,
+        skill: skillId,
+      });
+    }
+  }
+
+  return vars;
+}
 
 function readYamlFiles(dir: string, source: "official" | "community"): MarketplaceWorkflow[] {
   if (!fs.existsSync(dir)) return [];
@@ -56,6 +93,7 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
         }
       }
 
+      const skillList = [...allSkills];
       workflows.push({
         ...workflow,
         ...meta,
@@ -63,8 +101,9 @@ function readYamlFiles(dir: string, source: "official" | "community"): Marketpla
         filePath: `workflows/${source}/${file}`,
         nodeCount: Object.keys(workflow.nodes).length,
         edgeCount: workflow.edges.length,
-        skills: [...allSkills],
+        skills: skillList,
         customSkills,
+        derivedVariables: deriveVariables(skillList, meta.variables),
         sampleOutput: typeof parsed.sample_output === "string" ? parsed.sample_output : undefined,
       });
     } catch (err) {

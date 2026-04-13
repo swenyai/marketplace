@@ -7,6 +7,49 @@ export interface WorkflowVariable {
   alternatives?: { name: string; description: string }[];
 }
 
+export interface DerivedVariable {
+  name: string;
+  description: string;
+  required: boolean;
+  skill: string;
+}
+
+/**
+ * Static map of builtin skill ID → config fields.
+ * Derived from @sweny-ai/core/skills/*.ts — kept static because
+ * the marketplace site can't import the Node-only skill modules.
+ */
+export const SKILL_CONFIG: Record<string, { env: string; description: string; required: boolean }[]> = {
+  github: [{ env: "GITHUB_TOKEN", description: "GitHub personal access token or installation token", required: true }],
+  linear: [{ env: "LINEAR_API_KEY", description: "Linear API key", required: true }],
+  slack: [
+    { env: "SLACK_WEBHOOK_URL", description: "Slack incoming webhook URL", required: false },
+    { env: "SLACK_BOT_TOKEN", description: "Slack bot token (for API calls)", required: false },
+  ],
+  sentry: [
+    { env: "SENTRY_AUTH_TOKEN", description: "Sentry authentication token", required: true },
+    { env: "SENTRY_ORG", description: "Sentry organization slug", required: true },
+  ],
+  datadog: [
+    { env: "DD_API_KEY", description: "Datadog API key", required: true },
+    { env: "DD_APP_KEY", description: "Datadog application key", required: true },
+  ],
+  betterstack: [
+    { env: "BETTERSTACK_API_TOKEN", description: "BetterStack Telemetry API token", required: true },
+    { env: "BETTERSTACK_QUERY_ENDPOINT", description: "ClickHouse HTTP endpoint", required: true },
+  ],
+  notification: [
+    { env: "NOTIFICATION_WEBHOOK_URL", description: "Generic webhook URL", required: false },
+    { env: "DISCORD_WEBHOOK_URL", description: "Discord webhook URL", required: false },
+    { env: "TEAMS_WEBHOOK_URL", description: "Microsoft Teams webhook URL", required: false },
+    { env: "SMTP_URL", description: "SMTP connection URL for email", required: false },
+  ],
+  supabase: [
+    { env: "SUPABASE_URL", description: "Supabase project URL", required: true },
+    { env: "SUPABASE_SERVICE_ROLE_KEY", description: "Supabase service role key", required: true },
+  ],
+};
+
 export interface MarketplaceMetadata {
   author: string;
   category: Category;
@@ -45,20 +88,11 @@ export interface MarketplaceWorkflow extends Workflow, MarketplaceMetadata {
   skills: string[];
   /** Inline custom skills defined in the workflow's skills block */
   customSkills: Record<string, { name?: string; description?: string; instruction?: string; mcp?: McpServerConfig }>;
+  /** Auto-derived environment variables from the workflow's skills */
+  derivedVariables: DerivedVariable[];
   /** Sample output shown on the detail page */
   sampleOutput?: string;
 }
-
-export const DEFAULT_VARIABLES: WorkflowVariable[] = [
-  {
-    name: "ANTHROPIC_API_KEY",
-    description: "Anthropic API key for Claude",
-    required: true,
-    alternatives: [
-      { name: "CLAUDE_CODE_OAUTH_TOKEN", description: "Claude Code OAuth token" },
-    ],
-  },
-];
 
 export const CATEGORIES: Record<
   Category,

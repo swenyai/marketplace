@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { DEFAULT_VARIABLES } from "@/lib/types";
+import { useState } from "react";
 import type { MarketplaceWorkflow } from "@/lib/types";
 
 interface UsageSnippetProps {
@@ -11,24 +10,12 @@ interface UsageSnippetProps {
 export function UsageSnippet({ workflow }: UsageSnippetProps) {
   const [copied, setCopied] = useState(false);
 
-  const variables = workflow.variables?.length ? workflow.variables : DEFAULT_VARIABLES;
+  const variables = workflow.derivedVariables;
 
-  // Track which alternative is selected for each variable (by index)
-  // -1 = use the primary, 0+ = use that alternative
-  const [selections, setSelections] = useState<Record<string, number>>(
-    () => Object.fromEntries(variables.map((v) => [v.name, -1]))
-  );
+  const requiredVars = variables.filter((v) => v.required);
+  const optionalVars = variables.filter((v) => !v.required);
 
-  const resolvedVars = useMemo(() => {
-    return variables.map((v) => {
-      const sel = selections[v.name] ?? -1;
-      if (sel === -1) return { name: v.name, description: v.description };
-      const alt = v.alternatives?.[sel];
-      return alt ? { name: alt.name, description: alt.description } : { name: v.name, description: v.description };
-    });
-  }, [variables, selections]);
-
-  const envBlock = resolvedVars
+  const envBlock = variables
     .map((v) => `          ${v.name}: \${{ secrets.${v.name} }}`)
     .join("\n");
 
@@ -63,35 +50,39 @@ ${envBlock}`;
 
   return (
     <div className="space-y-3">
-      {/* Variable toggles */}
-      {variables.some((v) => v.alternatives?.length) && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-600">Configure environment variables:</p>
-          {variables
-            .filter((v) => v.alternatives?.length)
-            .map((v) => (
-              <div key={v.name} className="flex items-center gap-2 flex-wrap">
-                {[
-                  { name: v.name, description: v.description, idx: -1 },
-                  ...(v.alternatives ?? []).map((a, i) => ({ ...a, idx: i })),
-                ].map((option) => (
-                  <button
-                    key={option.name}
-                    onClick={() =>
-                      setSelections((s) => ({ ...s, [v.name]: option.idx }))
-                    }
-                    className={`text-[11px] px-2.5 py-1 rounded-md border transition ${
-                      (selections[v.name] ?? -1) === option.idx
-                        ? "bg-blue-950/50 border-blue-700 text-blue-300"
-                        : "bg-[#111] border-[#2a2a3a] text-gray-500 hover:text-gray-300"
-                    }`}
-                    title={option.description}
-                  >
-                    {option.name}
-                  </button>
-                ))}
-              </div>
+      {/* Required variables */}
+      {requiredVars.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-gray-400">Required secrets:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {requiredVars.map((v) => (
+              <span
+                key={v.name}
+                className="text-[11px] px-2 py-0.5 rounded bg-blue-950/50 border border-blue-800/50 text-blue-300"
+                title={`${v.description} (${v.skill})`}
+              >
+                {v.name}
+              </span>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Optional variables */}
+      {optionalVars.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-xs font-medium text-gray-500">Optional:</p>
+          <div className="flex flex-wrap gap-1.5">
+            {optionalVars.map((v) => (
+              <span
+                key={v.name}
+                className="text-[11px] px-2 py-0.5 rounded bg-[#111] border border-[#2a2a3a] text-gray-500"
+                title={`${v.description} (${v.skill})`}
+              >
+                {v.name}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

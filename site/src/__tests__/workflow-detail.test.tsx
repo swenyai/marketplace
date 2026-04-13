@@ -43,6 +43,12 @@ const MOCK_WORKFLOW: MarketplaceWorkflow = {
   nodeCount: 2,
   edgeCount: 1,
   skills: ["github", "slack"],
+  customSkills: {},
+  derivedVariables: [
+    { name: "ANTHROPIC_API_KEY", description: "Anthropic API key for Claude", required: true, skill: "core" },
+    { name: "GITHUB_TOKEN", description: "GitHub personal access token", required: true, skill: "github" },
+    { name: "SLACK_WEBHOOK_URL", description: "Slack incoming webhook URL", required: false, skill: "slack" },
+  ],
 };
 
 // ---------------------------------------------------------------------------
@@ -202,33 +208,32 @@ describe("InstallButton and UsageSnippet YAML parity", () => {
     expect(usageSrc).toContain("sweny-workflow:");
   });
 
-  it("both import DEFAULT_VARIABLES from @/lib/types (no local duplication)", () => {
-    expect(installSrc).toContain('import { DEFAULT_VARIABLES } from "@/lib/types"');
-    expect(usageSrc).toContain('import { DEFAULT_VARIABLES } from "@/lib/types"');
-    // Neither should define their own
-    expect(installSrc).not.toMatch(/^const DEFAULT_VARIABLES/m);
-    expect(usageSrc).not.toMatch(/^const DEFAULT_VARIABLES/m);
+  it("both use derivedVariables from workflow (not DEFAULT_VARIABLES)", () => {
+    expect(installSrc).toContain("derivedVariables");
+    expect(usageSrc).toContain("derivedVariables");
+    // Neither should import DEFAULT_VARIABLES
+    expect(installSrc).not.toContain("DEFAULT_VARIABLES");
+    expect(usageSrc).not.toContain("DEFAULT_VARIABLES");
   });
 });
 
 // ---------------------------------------------------------------------------
-// DEFAULT_VARIABLES: single source of truth
+// SKILL_CONFIG: static skill → env var mapping
 // ---------------------------------------------------------------------------
 
-describe("DEFAULT_VARIABLES shared constant", () => {
+describe("SKILL_CONFIG shared constant", () => {
   const typesSrc = readSrc("lib/types.ts");
 
   it("is exported from lib/types.ts", () => {
-    expect(typesSrc).toContain("export const DEFAULT_VARIABLES");
+    expect(typesSrc).toContain("export const SKILL_CONFIG");
   });
 
-  it("includes ANTHROPIC_API_KEY as required", () => {
-    expect(typesSrc).toContain("ANTHROPIC_API_KEY");
-    expect(typesSrc).toContain("required: true");
+  it("includes github with GITHUB_TOKEN", () => {
+    expect(typesSrc).toContain("GITHUB_TOKEN");
   });
 
-  it("includes CLAUDE_CODE_OAUTH_TOKEN as an alternative", () => {
-    expect(typesSrc).toContain("CLAUDE_CODE_OAUTH_TOKEN");
+  it("includes slack with SLACK_WEBHOOK_URL", () => {
+    expect(typesSrc).toContain("SLACK_WEBHOOK_URL");
   });
 });
 
