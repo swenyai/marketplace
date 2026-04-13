@@ -1,0 +1,274 @@
+id: dependency-updater
+name: Dependency Updater
+description: Scan for outdated dependencies, assess breaking changes, create update branches, run tests with retry on failure, and open PRs for safe updates
+author: sweny-ai
+category: security
+tags: [dependencies, security, updates, npm, semver, automated-pr]
+icon: package
+color: green
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: scan-dependencies
+nodes:
+  scan-dependencies:
+    name: Scan Dependencies
+    instruction: >-
+      Scan the project for outdated dependencies:
+
+
+      1. **Detect package managers**: Check for package.json (npm/yarn/pnpm), requirements.txt /
+         pyproject.toml (pip/poetry), Cargo.toml (cargo), go.mod (go), Gemfile (bundler).
+
+      2. **List outdated**: For each package manager, list all outdated dependencies with:
+         - Current version
+         - Latest version
+         - Semver change type (patch, minor, major)
+         - Whether the package has known security vulnerabilities (CVEs)
+
+      3. **Categorize by risk**:
+         - CRITICAL: Known CVE with severity HIGH or CRITICAL
+         - HIGH: Known CVE with severity MEDIUM, or major version bump on core dependency
+         - MEDIUM: Minor version bump or patch on widely-used dependency
+         - LOW: Patch updates on non-critical dependencies
+
+      4. **Group updates**: Group compatible updates that can be applied together
+         (e.g., all patch updates, all updates within one ecosystem).
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        package_manager:
+          type: string
+        dependencies:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              current:
+                type: string
+              latest:
+                type: string
+              change_type:
+                type: string
+                enum: [patch, minor, major]
+              risk:
+                type: string
+                enum: [CRITICAL, HIGH, MEDIUM, LOW]
+              cve:
+                type: string
+            required: [name, current, latest, change_type, risk]
+        groups:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              dependencies:
+                type: array
+                items:
+                  type: string
+            required: [name, dependencies]
+      required: [package_manager, dependencies]
+
+  assess-breaking-changes:
+    name: Assess Breaking Changes
+    instruction: >-
+      For each major version update and high-risk dependency, assess the breaking changes:
+
+
+      1. **Read changelogs**: Find the CHANGELOG, release notes, or migration guide for each
+         major version bump. Identify breaking changes relevant to this project.
+
+      2. **Search for affected usage**: For each breaking change, search the codebase for usage
+         of the affected APIs, types, or behaviors.
+
+      3. **Estimate effort**: For each affected dependency, estimate the migration effort:
+         - TRIVIAL: Rename or simple API change, <5 minutes
+         - SMALL: A few call sites to update, <30 minutes
+         - MEDIUM: Significant changes needed, 1-2 hours
+         - LARGE: Major refactor required, >2 hours
+
+      4. **Recommend strategy**: For each group of updates:
+         - AUTO: Safe to apply automatically (patches, minor with no breaking changes)
+         - REVIEW: Apply but needs human review (minor with behavioral changes)
+         - MANUAL: Requires manual migration (major with breaking changes)
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        assessments:
+          type: array
+          items:
+            type: object
+            properties:
+              dependency:
+                type: string
+              breaking_changes:
+                type: array
+                items:
+                  type: string
+              affected_files:
+                type: array
+                items:
+                  type: string
+              effort:
+                type: string
+                enum: [TRIVIAL, SMALL, MEDIUM, LARGE]
+              strategy:
+                type: string
+                enum: [AUTO, REVIEW, MANUAL]
+            required: [dependency, effort, strategy]
+      required: [assessments]
+
+  apply-updates:
+    name: Apply Updates
+    instruction: >-
+      Apply the dependency updates grouped by strategy:
+
+
+      1. **AUTO updates first**: Apply all patch and safe minor updates together.
+         Run the lock file update command for the relevant package manager.
+
+      2. **REVIEW updates next**: Apply each review-needed update individually.
+         Make any necessary code changes to adapt to API changes.
+
+      3. **Skip MANUAL updates**: These need human intervention. Note them for the PR description.
+
+      4. **Verify lock file**: Ensure the lock file is regenerated and consistent.
+
+      5. **Check for peer dependency conflicts**: Resolve any peer dependency warnings.
+
+
+      Create a clear commit for each group of updates with a descriptive message.
+    skills:
+      - github
+
+  run-tests:
+    name: Run Tests
+    instruction: >-
+      Run the full test suite to verify the updates don't break anything:
+
+
+      1. **Identify test command**: Detect the test runner (npm test, pytest, cargo test, go test, etc.)
+
+      2. **Run tests**: Execute the full test suite and capture output.
+
+      3. **Analyze failures**: If tests fail:
+         - Identify which dependency update caused the failure
+         - Determine if the fix is obvious (import path change, API rename, type update)
+         - If fixable, apply the fix and mark for re-test
+         - If not fixable, revert that specific update and note it
+
+      4. **Output result**: Report PASS (all tests green), FIXABLE (failures with known fixes),
+         or BROKEN (unfixable test failures requiring manual intervention).
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        result:
+          type: string
+          enum: [PASS, FIXABLE, BROKEN]
+        test_output:
+          type: string
+        failures:
+          type: array
+          items:
+            type: object
+            properties:
+              test:
+                type: string
+              error:
+                type: string
+              caused_by:
+                type: string
+              fix:
+                type: string
+            required: [test, error]
+      required: [result]
+
+  fix-and-retest:
+    name: Fix Failures & Retest
+    instruction: >-
+      Apply fixes for the test failures identified in the previous run:
+
+
+      1. **Apply each fix**: For each FIXABLE failure, make the code change described
+         in the failure analysis.
+
+      2. **Re-run affected tests**: Run just the previously-failing tests to verify fixes.
+
+      3. **Run full suite**: Once individual fixes pass, run the full test suite again.
+
+      4. **If still failing**: Revert the problematic dependency update and remove it from
+         the update set. Note it as requiring manual migration.
+
+      5. **Commit fixes**: Create a commit with the test fixes, clearly noting which
+         dependency update required them.
+    skills:
+      - github
+
+  create-pr:
+    name: Create Pull Request
+    instruction: >-
+      Create a pull request with all the applied dependency updates:
+
+
+      1. **PR title**: "chore(deps): update N dependencies (M security fixes)"
+
+      2. **PR body** should include:
+         - Summary of all updates applied with version changes
+         - Security fixes highlighted at the top with CVE references
+         - Breaking changes addressed and how they were resolved
+         - Dependencies skipped (MANUAL strategy) and why
+         - Test results summary
+
+      3. **Labels**: Add appropriate labels (dependencies, security if CVEs fixed)
+
+      4. **Reviewers**: If major updates were applied, request review from relevant code owners.
+    skills:
+      - github
+
+  notify:
+    name: Send Notification
+    instruction: >-
+      Notify the team about the dependency update PR:
+
+
+      1. Include: number of updates, number of security fixes, PR link.
+
+      2. Highlight any MANUAL updates that still need human attention.
+
+      3. Note any dependencies that were reverted due to test failures.
+
+      4. Keep it brief — the PR has all the details.
+    skills:
+      - slack
+      - notification
+
+edges:
+  - from: scan-dependencies
+    to: assess-breaking-changes
+  - from: assess-breaking-changes
+    to: apply-updates
+  - from: apply-updates
+    to: run-tests
+  - from: run-tests
+    to: fix-and-retest
+    when: result is FIXABLE
+  - from: run-tests
+    to: create-pr
+    when: result is PASS
+  - from: run-tests
+    to: create-pr
+    when: result is BROKEN
+  - from: fix-and-retest
+    to: run-tests
+    max_iterations: 3
+  - from: create-pr
+    to: notify

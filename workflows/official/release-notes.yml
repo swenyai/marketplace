@@ -8,18 +8,6 @@ icon: megaphone
 color: blue
 version: 1.0.0
 sweny_version: ">=5.0.0"
-variables:
-  - name: ANTHROPIC_API_KEY
-    description: Anthropic API key for Claude
-    required: true
-    alternatives:
-      - name: CLAUDE_CODE_OAUTH_TOKEN
-        description: Claude Code OAuth token
-  - name: GITHUB_TOKEN
-    description: GitHub token for repo access
-    required: true
-  - name: SLACK_WEBHOOK_URL
-    description: Slack webhook for announcements
 entry: gather-changes
 nodes:
   gather-changes:

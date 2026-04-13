@@ -1,0 +1,220 @@
+id: doc-quality-gate
+name: Documentation Quality Gate
+description: Generate or update documentation from code changes, use an LLM judge to evaluate completeness and accuracy, iterate until quality bar is met, then publish
+author: sweny-ai
+category: content
+tags: [documentation, quality, llm-judge, api-docs, readme, automated]
+icon: file-text
+color: purple
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: analyze-changes
+nodes:
+  analyze-changes:
+    name: Analyze Code Changes
+    instruction: >-
+      Analyze recent code changes to determine what documentation needs updating:
+
+
+      1. **Identify changed files**: Look at recent commits or PR diff to find modified source files.
+
+      2. **Categorize changes**:
+         - New public APIs (functions, classes, endpoints, CLI commands)
+         - Modified API signatures or behavior
+         - New configuration options
+         - Removed or deprecated features
+         - New dependencies or integrations
+
+      3. **Find existing docs**: Locate documentation files that correspond to changed code:
+         - README.md, docs/, wiki pages
+         - API reference (OpenAPI specs, JSDoc, docstrings)
+         - Configuration guides
+         - Migration guides
+
+      4. **Gap analysis**: Identify which changes lack documentation or have stale docs.
+
+
+      Output a list of documentation tasks ordered by priority.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              change_type:
+                type: string
+                enum: [new_api, modified_api, new_config, deprecated, new_dependency]
+              description:
+                type: string
+              existing_docs:
+                type: string
+            required: [file, change_type, description]
+        doc_tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              task:
+                type: string
+              priority:
+                type: string
+                enum: [HIGH, MEDIUM, LOW]
+              target_file:
+                type: string
+            required: [task, priority]
+      required: [changes, doc_tasks]
+
+  generate-docs:
+    name: Generate Documentation
+    instruction: >-
+      Write or update documentation for each identified gap:
+
+
+      1. **For new APIs**: Write complete documentation including:
+         - Purpose and use case
+         - Function/method signature with parameter descriptions
+         - Return values and error cases
+         - Usage examples (at least one basic, one advanced)
+         - Links to related APIs
+
+      2. **For modified APIs**: Update existing docs to reflect changes:
+         - Update signatures and parameter descriptions
+         - Add migration notes if behavior changed
+         - Update examples to use new API
+
+      3. **For new configuration**: Document each option with:
+         - Name, type, default value
+         - Description of what it controls
+         - Valid values or ranges
+         - Example configuration
+
+      4. **For deprecations**: Add deprecation notices with:
+         - What's deprecated and why
+         - Migration path to replacement
+         - Timeline for removal
+
+      5. **Writing style**:
+         - Use active voice and present tense
+         - Lead with the most common use case
+         - Include copy-pasteable code examples
+         - No jargon without explanation
+    skills:
+      - github
+
+  judge-docs:
+    name: Documentation Quality Judge
+    instruction: >-
+      You are a senior technical writer reviewing this documentation for publication.
+      Evaluate it critically against industry standards.
+
+
+      **Score each dimension 1-5:**
+
+      1. **Completeness**: Does every public API have documentation? Are all parameters,
+         return values, and error cases documented? Are there examples?
+
+      2. **Accuracy**: Does the documentation match the actual code? Do the examples work?
+         Are parameter types and defaults correct?
+
+      3. **Clarity**: Can a developer new to the project understand this? Is jargon explained?
+         Are concepts introduced before they're referenced?
+
+      4. **Examples quality**: Are examples realistic and copy-pasteable? Do they cover
+         common use cases? Are there both simple and advanced examples?
+
+      5. **Consistency**: Does the new documentation match the style and format of existing docs?
+         Are headings, code blocks, and formatting consistent?
+
+
+      **Overall verdict**: PASS (all dimensions >= 4) or FAIL (any dimension < 4).
+
+      If FAIL, provide specific feedback quoting the weak sections and explaining exactly
+      what needs to improve. "Add more detail" is not actionable — "The `createUser` function
+      docs are missing the `options` parameter and its 4 sub-fields" is.
+    skills: []
+    output:
+      type: object
+      properties:
+        scores:
+          type: object
+          properties:
+            completeness:
+              type: number
+            accuracy:
+              type: number
+            clarity:
+              type: number
+            examples:
+              type: number
+            consistency:
+              type: number
+        verdict:
+          type: string
+          enum: [PASS, FAIL]
+        feedback:
+          type: string
+          description: Specific improvement feedback (required if FAIL)
+      required: [scores, verdict]
+
+  refine-docs:
+    name: Refine Documentation
+    instruction: >-
+      The documentation quality judge found issues. Revise to address every piece of feedback:
+
+
+      1. Do not remove content that scored well — only improve weak sections.
+
+      2. Address each specific criticism from the judge's feedback.
+
+      3. If completeness was low, add the missing API docs, parameters, or examples.
+
+      4. If accuracy was flagged, re-read the source code and correct the docs.
+
+      5. If examples were weak, write new ones that are realistic and copy-pasteable.
+
+      6. After revisions, the document should pass all quality dimensions at >= 4.
+    skills:
+      - github
+
+  create-pr:
+    name: Create Documentation PR
+    instruction: >-
+      Create a pull request with the documentation updates:
+
+
+      1. **PR title**: "docs: update documentation for [changed feature/API]"
+
+      2. **PR body** should include:
+         - Summary of documentation changes
+         - List of new or updated doc files
+         - Quality scores from the judge (final passing scores)
+         - Link to the code changes that triggered this update
+
+      3. **Labels**: Add "documentation" label.
+
+      4. **Notify**: Send a brief notification about the docs PR.
+    skills:
+      - github
+      - slack
+      - notification
+
+edges:
+  - from: analyze-changes
+    to: generate-docs
+  - from: generate-docs
+    to: judge-docs
+  - from: judge-docs
+    to: refine-docs
+    when: verdict is FAIL
+  - from: judge-docs
+    to: create-pr
+    when: verdict is PASS
+  - from: refine-docs
+    to: judge-docs
+    max_iterations: 3

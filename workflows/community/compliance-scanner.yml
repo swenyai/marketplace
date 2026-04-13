@@ -1,0 +1,339 @@
+id: compliance-scanner
+name: Compliance Scanner
+description: Scan code for compliance violations across multiple domains in parallel — secrets, licenses, PII handling, accessibility — then generate a compliance report with remediation priorities
+author: sweny-ai
+category: security
+tags: [compliance, security, licenses, pii, accessibility, secrets, parallel]
+icon: shield
+color: red
+version: 1.0.0
+sweny_version: ">=5.0.0"
+entry: discover-scope
+nodes:
+  discover-scope:
+    name: Discover Scan Scope
+    instruction: >-
+      Determine what code needs scanning and prepare the scan context:
+
+
+      1. **Identify language/framework**: Detect the primary languages, frameworks, and
+         build tools in the project.
+
+      2. **Find configuration files**: Locate compliance-relevant config:
+         - .env files, secrets config, vault references
+         - License files (LICENSE, NOTICE, package.json license field)
+         - Privacy config (cookie consent, data retention policies)
+         - Accessibility config (a11y linting rules, WCAG level targets)
+
+      3. **Determine scope**: Full repo scan or incremental (changed files only)?
+         If running on a PR, scope to changed files for faster feedback.
+
+      4. **Check for existing policies**: Look for documented compliance requirements:
+         - SECURITY.md, PRIVACY.md
+         - .licensechecker, .secretlintrc
+         - Compliance requirements in README or docs
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        languages:
+          type: array
+          items:
+            type: string
+        scope:
+          type: string
+          enum: [FULL, INCREMENTAL]
+        files_to_scan:
+          type: number
+        existing_policies:
+          type: array
+          items:
+            type: string
+      required: [languages, scope]
+
+  scan-secrets:
+    name: Secrets & Credentials Scan
+    instruction: >-
+      Scan for exposed secrets and credentials:
+
+
+      1. **Hardcoded secrets**: Search for patterns indicating hardcoded secrets:
+         - API keys (AWS, GCP, Azure, Stripe, Twilio, SendGrid patterns)
+         - Database connection strings with passwords
+         - JWT signing keys and tokens
+         - OAuth client secrets
+         - Private keys (RSA, SSH, PGP)
+
+      2. **Environment variable safety**: Check that:
+         - .env files are in .gitignore
+         - No .env files are committed in git history
+         - Environment variables are loaded from secure sources in production
+
+      3. **Secret management**: Verify proper secret management:
+         - Secrets are referenced by name, not value
+         - Vault/KMS integration where appropriate
+         - No secrets in CI/CD config files (use CI secrets instead)
+
+      4. **Git history**: Check if secrets were ever committed and not rotated.
+
+
+      For each finding, classify: CRITICAL (active secret exposed), HIGH (potential secret pattern),
+      MEDIUM (insecure secret handling), LOW (best practice suggestion).
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              line:
+                type: number
+              severity:
+                type: string
+                enum: [CRITICAL, HIGH, MEDIUM, LOW]
+              type:
+                type: string
+              description:
+                type: string
+              remediation:
+                type: string
+            required: [file, severity, type, description]
+      required: [findings]
+
+  scan-licenses:
+    name: License Compliance Scan
+    instruction: >-
+      Analyze dependency licenses for compliance:
+
+
+      1. **Direct dependencies**: Check the license of every direct dependency:
+         - Permissive (MIT, Apache-2.0, BSD) — generally safe
+         - Copyleft (GPL, LGPL, AGPL) — may require source disclosure
+         - No license — legally risky, cannot use
+         - Custom/proprietary — needs legal review
+
+      2. **Transitive dependencies**: Check deep dependency tree for copyleft licenses
+         that may "infect" the project.
+
+      3. **License compatibility**: Check that dependency licenses are compatible with
+         the project's own license. E.g., GPL dependencies in an MIT project is problematic.
+
+      4. **Attribution requirements**: Check that required attribution notices (Apache-2.0
+         NOTICE files, BSD copyright notices) are properly included.
+
+      5. **Commercial restrictions**: Flag any dependencies with non-commercial clauses
+         or other usage restrictions.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              dependency:
+                type: string
+              license:
+                type: string
+              risk:
+                type: string
+                enum: [NONE, LOW, MEDIUM, HIGH, CRITICAL]
+              issue:
+                type: string
+            required: [dependency, license, risk]
+        summary:
+          type: object
+          properties:
+            total_deps:
+              type: number
+            permissive:
+              type: number
+            copyleft:
+              type: number
+            no_license:
+              type: number
+      required: [findings]
+
+  scan-pii:
+    name: PII & Data Privacy Scan
+    instruction: >-
+      Scan for PII handling and data privacy issues:
+
+
+      1. **PII in logs**: Check logging statements for PII leakage:
+         - Email addresses, phone numbers, IP addresses
+         - User names, addresses, SSNs
+         - Payment information (card numbers, bank accounts)
+         - Session tokens or auth credentials
+
+      2. **PII in storage**: Check data storage for proper PII handling:
+         - Encryption at rest for sensitive fields
+         - PII not stored in plain text
+         - Proper data retention policies
+
+      3. **PII in transit**: Check API responses and data transfers:
+         - Sensitive data not exposed in URLs (query parameters)
+         - Proper field masking in API responses
+         - HTTPS enforced for PII transmission
+
+      4. **Data deletion**: Check for GDPR/CCPA compliance:
+         - User data deletion capability
+         - Right to export data
+         - Consent management
+
+      5. **Error messages**: Check that error messages don't leak user data.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              category:
+                type: string
+                enum: [LOGGING, STORAGE, TRANSIT, DELETION, ERROR_LEAK]
+              severity:
+                type: string
+                enum: [CRITICAL, HIGH, MEDIUM, LOW]
+              description:
+                type: string
+              remediation:
+                type: string
+            required: [file, category, severity, description]
+      required: [findings]
+
+  scan-accessibility:
+    name: Accessibility Scan
+    instruction: >-
+      Scan frontend code for accessibility issues (skip if no frontend code):
+
+
+      1. **Semantic HTML**: Check for:
+         - Proper heading hierarchy (h1 → h2 → h3, no skips)
+         - Semantic elements (nav, main, article, aside) vs div soup
+         - Button vs link usage (buttons for actions, links for navigation)
+
+      2. **ARIA**: Check for:
+         - Missing alt text on images
+         - Missing aria-label on icon-only buttons
+         - Missing form labels
+         - Incorrect ARIA roles or properties
+
+      3. **Keyboard navigation**: Check for:
+         - Click handlers without keyboard equivalents
+         - Focus management in modals and dropdowns
+         - Tab order issues (tabindex > 0)
+         - Focus traps without escape
+
+      4. **Color & contrast**: Check for:
+         - Color as the only indicator (error states, required fields)
+         - Hardcoded colors that may fail contrast ratios
+
+      5. **If no frontend code exists**: Report N/A and skip.
+    skills:
+      - github
+    output:
+      type: object
+      properties:
+        applicable:
+          type: boolean
+        findings:
+          type: array
+          items:
+            type: object
+            properties:
+              file:
+                type: string
+              wcag_criterion:
+                type: string
+              severity:
+                type: string
+                enum: [CRITICAL, HIGH, MEDIUM, LOW]
+              description:
+                type: string
+              remediation:
+                type: string
+            required: [file, severity, description]
+      required: [applicable]
+
+  generate-report:
+    name: Generate Compliance Report
+    instruction: >-
+      Synthesize all scan results into a comprehensive compliance report:
+
+
+      1. **Executive summary**: Overall compliance posture — how many findings per category
+         and severity. Red/Yellow/Green status for each domain.
+
+      2. **Critical findings first**: List all CRITICAL and HIGH findings with immediate
+         remediation steps. These should be fixed before the next release.
+
+      3. **Remediation priority**: Order all findings by:
+         - Severity (CRITICAL → LOW)
+         - Effort to fix (quick wins first)
+         - Business impact
+
+      4. **Trends** (if historical data available): Is compliance improving or degrading?
+
+      5. **Action items**: Create specific, assignable tasks for each finding.
+         Group by team/domain for easy assignment.
+
+      6. **Post the report** as a PR comment or issue, and send a summary notification.
+    skills:
+      - github
+      - slack
+      - notification
+    output:
+      type: object
+      properties:
+        status:
+          type: object
+          properties:
+            secrets:
+              type: string
+              enum: [PASS, WARN, FAIL]
+            licenses:
+              type: string
+              enum: [PASS, WARN, FAIL]
+            pii:
+              type: string
+              enum: [PASS, WARN, FAIL]
+            accessibility:
+              type: string
+              enum: [PASS, WARN, FAIL, N/A]
+        total_findings:
+          type: number
+        critical_count:
+          type: number
+      required: [status, total_findings, critical_count]
+
+edges:
+  - from: discover-scope
+    to: scan-secrets
+  - from: discover-scope
+    to: scan-licenses
+  - from: discover-scope
+    to: scan-pii
+  - from: discover-scope
+    to: scan-accessibility
+  - from: scan-secrets
+    to: generate-report
+  - from: scan-licenses
+    to: generate-report
+  - from: scan-pii
+    to: generate-report
+  - from: scan-accessibility
+    to: generate-report
