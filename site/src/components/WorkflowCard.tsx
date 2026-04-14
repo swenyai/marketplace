@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import type { MarketplaceWorkflow } from "@/lib/types";
 
@@ -22,21 +20,23 @@ export function WorkflowCard({ workflow }: WorkflowCardProps) {
       <p className="text-[13px] text-text-muted leading-[1.5] mb-3 line-clamp-2">
         {workflow.description}
       </p>
-      <div className="flex gap-1 flex-wrap mb-3 min-h-[18px]">
-        {workflow.skills.slice(0, 3).map((skill) => (
-          <span
-            key={skill}
-            className="bg-surface-2 border border-border text-text-muted px-1.5 py-0.5 rounded text-[10px] font-medium"
-          >
-            {skill}
-          </span>
-        ))}
-        {workflow.skills.length > 3 && (
-          <span className="text-[10px] text-text-dim self-center">
-            +{workflow.skills.length - 3}
-          </span>
-        )}
-      </div>
+      {workflow.skills.length > 0 && (
+        <div className="flex gap-1 flex-wrap mb-3">
+          {workflow.skills.slice(0, 3).map((skill) => (
+            <span
+              key={skill}
+              className="bg-surface-2 border border-border text-text-muted px-1.5 py-0.5 rounded text-[10px] font-medium"
+            >
+              {skill}
+            </span>
+          ))}
+          {workflow.skills.length > 3 && (
+            <span className="text-[10px] text-text-dim self-center">
+              +{workflow.skills.length - 3}
+            </span>
+          )}
+        </div>
+      )}
       <div className="flex justify-between items-center pt-3 border-t border-border text-[11px] text-text-dim">
         <span className="flex items-center gap-1.5">
           <span

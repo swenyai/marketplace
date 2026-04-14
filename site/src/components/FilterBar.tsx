@@ -79,7 +79,7 @@ export function FilterBar({
                 key={key}
                 onClick={() => onCategoryChange(active ? null : key)}
                 aria-pressed={active}
-                className={`min-h-[32px] px-3 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                className={`min-h-[44px] md:min-h-[32px] px-3 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                   active
                     ? "bg-accent-bg border border-accent-border text-accent"
                     : "bg-surface border border-border text-text-muted hover:border-text-dim"
@@ -100,7 +100,7 @@ export function FilterBar({
               key={s}
               onClick={() => onSkillChange(active ? null : s)}
               aria-pressed={active}
-              className={`min-h-[32px] px-3 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              className={`min-h-[44px] md:min-h-[32px] px-3 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 active
                   ? "bg-accent-bg border border-accent-border text-accent"
                   : "bg-surface border border-border text-text-muted hover:border-text-dim"
@@ -116,7 +116,7 @@ export function FilterBar({
           <button
             onClick={onClearAll}
             aria-label="Clear filters"
-            className="min-h-[32px] px-3 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 border border-dashed border-text-dim text-text-dim hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="min-h-[44px] md:min-h-[32px] px-3 rounded-md text-xs font-medium transition inline-flex items-center gap-1.5 border border-dashed border-text-dim text-text-dim hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <span>×</span>
             <span>clear filters ({activeFilterCount})</span>

@@ -20,8 +20,9 @@ export async function GET(
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          background:
-            "radial-gradient(circle at 0% 0%, rgba(59,130,246,0.2), transparent 50%), radial-gradient(circle at 100% 100%, rgba(56,189,248,0.12), transparent 50%), #050505",
+          backgroundColor: "#050505",
+          backgroundImage:
+            "radial-gradient(circle at 0% 0%, rgba(59,130,246,0.2), transparent 50%), radial-gradient(circle at 100% 100%, rgba(56,189,248,0.12), transparent 50%)",
           padding: "72px",
           color: "#fafafa",
           fontFamily: "sans-serif",
@@ -34,9 +35,10 @@ export async function GET(
             marginBottom: 20,
             fontFamily: "monospace",
             letterSpacing: "0.02em",
+            display: "flex",
           }}
         >
-          // {workflow.source} · {workflow.category}
+          {`// ${workflow.source} · ${workflow.category}`}
         </div>
         <div
           style={{

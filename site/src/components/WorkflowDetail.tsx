@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
+import { useMemo, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { MarketplaceWorkflow } from "@/lib/types";
@@ -39,12 +39,9 @@ function WorkflowDetailInner({
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const [modalOpen, setModalOpen] = useState(false);
 
-  // Deep-link support: ?view=graph opens modal on mount
-  useEffect(() => {
-    setModalOpen(searchParams.get("view") === "graph");
-  }, [searchParams]);
+  // URL is the single source of truth for modal state — ?view=graph is the deep-link.
+  const modalOpen = searchParams.get("view") === "graph";
 
   const openModal = () => {
     const params = new URLSearchParams(searchParams.toString());

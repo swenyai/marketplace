@@ -1,18 +1,30 @@
+import React, { Suspense } from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { WorkflowDetail } from "@/components/WorkflowDetail";
 import type { MarketplaceWorkflow } from "@/lib/types";
 
-// Stub dynamic imports for jsdom
+// react-flow needs a real DOM; stub the dynamically imported DagViewer.
 vi.mock("@/components/DagViewer", () => ({
   default: () => <div data-testid="dag-viewer-stub" />,
 }));
+
+// next/dynamic → React.lazy-equivalent so the loader still runs and hits
+// the vi.mock registry above.
 vi.mock("next/dynamic", () => ({
-  default: () => {
-    const Stub = () => <div data-testid="dag-viewer-stub" />;
-    return Stub;
+  default: (
+    loader: () => Promise<{ default: React.ComponentType<Record<string, unknown>> }>,
+  ) => {
+    const Lazy = React.lazy(loader);
+    const Wrapped = (props: Record<string, unknown>) => (
+      <Suspense fallback={null}>
+        <Lazy {...props} />
+      </Suspense>
+    );
+    return Wrapped;
   },
 }));
+
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace: vi.fn() }),
@@ -60,10 +72,11 @@ describe("WorkflowDetail", () => {
     expect(screen.getByText("GITHUB_TOKEN")).toBeInTheDocument();
   });
 
-  it("hides optional env vars behind Show button", () => {
+  it("hides optional env vars behind the Show toggle", () => {
     render(<WorkflowDetail workflow={mockWorkflow} />);
     expect(screen.queryByText("SLACK_WEBHOOK_URL")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /show optional/i })).toBeInTheDocument();
+    const toggle = screen.getByRole("button", { name: /show optional/i });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
   it("renders mobile CTA button to view graph", () => {

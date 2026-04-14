@@ -29,7 +29,7 @@ export function InstallCommand({ workflowId }: InstallCommandProps) {
       <button
         onClick={handleCopy}
         aria-label="Copy install command"
-        className="flex-shrink-0 text-[10px] text-text-dim hover:text-text uppercase tracking-wider font-sans font-medium transition min-h-[32px] px-2 flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+        className="flex-shrink-0 text-[10px] text-text-dim hover:text-text uppercase tracking-wider font-sans font-medium transition min-h-[44px] md:min-h-[32px] min-w-[44px] md:min-w-0 px-2 flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
       >
         {copied ? (
           <span className="text-accent">copied ✓</span>

@@ -59,7 +59,7 @@ export default async function WorkflowPage({ params }: Props) {
           </div>
           <Link
             href="/"
-            className="text-text-muted hover:text-text text-xs md:text-sm flex-shrink-0 whitespace-nowrap min-h-[36px] flex items-center px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="text-text-muted hover:text-text text-xs md:text-sm flex-shrink-0 whitespace-nowrap min-h-[44px] md:min-h-[36px] flex items-center px-2 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Browse All
           </Link>

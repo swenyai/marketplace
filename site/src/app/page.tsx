@@ -18,7 +18,7 @@ export default function Home() {
           <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
             <Link
               href="/create"
-              className="bg-accent hover:bg-accent-hover text-white px-3 md:px-4 py-2 rounded-md text-xs md:text-sm font-medium transition whitespace-nowrap min-h-[36px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="bg-accent hover:bg-accent-hover text-white px-3 md:px-4 py-2 rounded-md text-xs md:text-sm font-medium transition whitespace-nowrap min-h-[44px] md:min-h-[36px] flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
               <span className="md:hidden">+ Create</span>
               <span className="hidden md:inline">+ Create Workflow</span>
@@ -27,7 +27,7 @@ export default function Home() {
               href="https://github.com/swenyai/marketplace"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-text-muted hover:text-text text-xs md:text-sm min-h-[36px] flex items-center px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+              className="text-text-muted hover:text-text text-xs md:text-sm min-h-[44px] md:min-h-[36px] flex items-center px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
             >
               GitHub
             </a>
