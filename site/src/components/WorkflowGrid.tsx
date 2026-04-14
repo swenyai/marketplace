@@ -4,23 +4,36 @@ import { useState, useMemo } from "react";
 import type { MarketplaceWorkflow } from "@/lib/types";
 import type { Category } from "@/lib/types";
 import { WorkflowCard } from "./WorkflowCard";
-import { CategoryFilter } from "./CategoryFilter";
-import { WorkflowDetail } from "./WorkflowDetail";
+import { FilterBar } from "./FilterBar";
+import { EmptyState } from "./EmptyState";
 
 interface WorkflowGridProps {
   workflows: MarketplaceWorkflow[];
 }
 
 export function WorkflowGrid({ workflows }: WorkflowGridProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState<Category | null>(null);
+  const [category, setCategory] = useState<Category | null>(null);
+  const [skill, setSkill] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const w of workflows) counts[w.category] = (counts[w.category] ?? 0) + 1;
+    return counts;
+  }, [workflows]);
+
+  const skillCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const w of workflows) {
+      for (const s of w.skills) counts[s] = (counts[s] ?? 0) + 1;
+    }
+    return counts;
+  }, [workflows]);
 
   const filtered = useMemo(() => {
     let result = workflows;
-    if (categoryFilter) {
-      result = result.filter((w) => w.category === categoryFilter);
-    }
+    if (category) result = result.filter((w) => w.category === category);
+    if (skill) result = result.filter((w) => w.skills.includes(skill));
     if (query.trim()) {
       const q = query.toLowerCase();
       result = result.filter(
@@ -32,67 +45,56 @@ export function WorkflowGrid({ workflows }: WorkflowGridProps) {
       );
     }
     return result;
-  }, [workflows, categoryFilter, query]);
+  }, [workflows, category, skill, query]);
 
-  const selected = selectedId ? workflows.find((w) => w.id === selectedId) ?? null : null;
+  const clearAll = () => {
+    setCategory(null);
+    setSkill(null);
+    setQuery("");
+  };
+
+  const activeSummary = [
+    category && <span key="c" className="text-accent">{category}</span>,
+    skill && <span key="s" className="text-accent">{skill}</span>,
+  ].filter(Boolean);
 
   return (
     <div>
-      {/* Search + Filter */}
-      <div className="mb-6 space-y-3">
-        <div className="relative">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder='Search workflows... (e.g. "security", "triage", "code review")'
-            className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
-          />
-          <kbd className="hidden md:inline-block absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 bg-[#1a1a2e] px-1.5 py-0.5 rounded border border-[#2a2a3a]">
-            \u2318K
-          </kbd>
-        </div>
-        <CategoryFilter selected={categoryFilter} onChange={setCategoryFilter} />
-      </div>
+      <FilterBar
+        query={query}
+        onQueryChange={setQuery}
+        category={category}
+        onCategoryChange={setCategory}
+        skill={skill}
+        onSkillChange={setSkill}
+        onClearAll={clearAll}
+        categoryCounts={categoryCounts}
+        skillCounts={skillCounts}
+        totalCount={workflows.length}
+      />
 
-      {/* Grid + Detail */}
-      <div className={`grid gap-4 md:gap-6 ${selected ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}>
-        {/* Cards */}
-        <div
-          className={`grid gap-3 auto-rows-max ${
-            selected
-              ? "grid-cols-1 sm:grid-cols-2"
-              : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-          }`}
-        >
-          {filtered.map((w) => (
-            <WorkflowCard
-              key={w.id}
-              workflow={w}
-              selected={w.id === selectedId}
-              onClick={() => setSelectedId(w.id === selectedId ? null : w.id)}
-            />
-          ))}
-          {filtered.length === 0 && (
-            <div className="col-span-full text-center py-12 text-gray-500">
-              No workflows match your search.
-            </div>
-          )}
-        </div>
-
-        {/* Detail panel */}
-        {selected && (
-          <div className="bg-[#0c0c14] rounded-xl border border-[#1e1e2e] p-4 md:p-6 overflow-y-auto lg:max-h-[calc(100vh-200px)] lg:sticky lg:top-24">
-            <WorkflowDetail workflow={selected} />
-          </div>
-        )}
-      </div>
-
-      {/* Footer count */}
-      <div className="mt-6 flex justify-between items-center text-xs text-gray-600">
+      <div className="flex justify-between items-center py-4 text-xs text-text-dim">
         <span>
-          {filtered.length} workflow{filtered.length !== 1 ? "s" : ""}
+          <span className="font-mono text-text">{filtered.length}</span> workflow
+          {filtered.length !== 1 ? "s" : ""}
+          {activeSummary.length > 0 && (
+            <>
+              {" · filtered by "}
+              {activeSummary.reduce<React.ReactNode[]>(
+                (acc, el, i) => (i === 0 ? [el] : [...acc, " + ", el]),
+                []
+              )}
+            </>
+          )}
         </span>
+      </div>
+
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+        {filtered.length === 0 ? (
+          <EmptyState onClearFilters={clearAll} />
+        ) : (
+          filtered.map((w) => <WorkflowCard key={w.id} workflow={w} />)
+        )}
       </div>
     </div>
   );
