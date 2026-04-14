@@ -1,29 +1,32 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { MarketplaceWorkflow } from "@/lib/types";
+import { InstallCommand } from "./InstallCommand";
+import { EnvVarList } from "./EnvVarList";
+import { DagModal } from "./DagModal";
 
-const DagViewer = dynamic(
-  () => import("./DagViewer"),
-  { ssr: false, loading: () => <div className="flex items-center justify-center h-[280px] text-gray-600 text-sm">Loading DAG...</div> }
-);
-import { COLOR_MAP, CATEGORIES } from "@/lib/types";
-import { YamlViewer } from "./YamlViewer";
-import { UsageSnippet } from "./UsageSnippet";
-import { InstallButton } from "./InstallButton";
-import { stringify } from "yaml";
-
-type Tab = "skills" | "yaml" | "usage" | "output";
+const DagViewer = dynamic(() => import("./DagViewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center h-full text-text-dim text-sm">
+      Loading DAG…
+    </div>
+  ),
+});
 
 interface WorkflowDetailProps {
   workflow: MarketplaceWorkflow;
+  sampleOutputHtml?: string;
 }
 
-export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
-  const [tab, setTab] = useState<Tab>("skills");
-  const color = workflow.color ?? CATEGORIES[workflow.category]?.color ?? "blue";
-  const colors = COLOR_MAP[color];
+export function WorkflowDetail({ workflow, sampleOutputHtml }: WorkflowDetailProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [modalOpen, setModalOpen] = useState(false);
 
   const coreWorkflow = useMemo(
     () => ({
@@ -37,178 +40,104 @@ export function WorkflowDetail({ workflow }: WorkflowDetailProps) {
     [workflow]
   );
 
-  const yamlString = useMemo(() => stringify(workflow), [workflow]);
+  // Deep-link support: ?view=graph opens modal on mount
+  useEffect(() => {
+    setModalOpen(searchParams.get("view") === "graph");
+  }, [searchParams]);
 
-  const skillNodes = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const [nodeId, node] of Object.entries(workflow.nodes)) {
-      for (const skill of node.skills) {
-        const arr = map.get(skill) ?? [];
-        arr.push(nodeId);
-        map.set(skill, arr);
-      }
-    }
-    return map;
-  }, [workflow]);
+  const openModal = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", "graph");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const closeModal = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("view");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-3">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <div
-            className={`w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold text-white ${colors.bg} ${colors.border} border flex-shrink-0`}
-          >
-            {workflow.name[0]}
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-[45%_1fr] gap-6 lg:gap-10">
+        {/* LEFT COLUMN — info */}
+        <div className="space-y-5">
+          <div>
+            <div className="font-mono text-[11px] text-accent mb-2 tracking-wide">
+              // {workflow.source} · {workflow.category} · v{workflow.version}
+            </div>
+            <h1 className="text-2xl md:text-[28px] font-medium tracking-tight text-text leading-tight mb-2">
+              {workflow.name}
+            </h1>
+            <p className="text-[14px] text-text-muted leading-relaxed">
+              {workflow.description}
+            </p>
           </div>
-          <h2 className="text-lg md:text-xl font-bold text-gray-100 min-w-0 break-words">{workflow.name}</h2>
-          <span
-            className={`text-[11px] font-medium px-2 py-0.5 rounded ${
-              workflow.source === "official"
-                ? "bg-blue-950/50 text-blue-400"
-                : "bg-green-950/50 text-green-400"
-            }`}
-          >
-            {workflow.source === "official" ? "OFFICIAL" : "COMMUNITY"}
-          </span>
-        </div>
-        <p className="text-xs md:text-sm text-gray-400 leading-relaxed">
-          {workflow.description}
-        </p>
-      </div>
 
-      {/* Meta bar */}
-      <div className="flex gap-2 md:gap-4 items-center mb-3 px-3 py-2 bg-[#111] rounded-lg border border-[#1e1e2e] text-[11px] md:text-xs text-gray-500 flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <div className="w-4 h-4 rounded-full bg-gray-700" />
-          <span>{workflow.author}</span>
-        </div>
-        <span className="text-gray-700">|</span>
-        <span>{workflow.nodeCount} nodes</span>
-        <span className="text-gray-700">|</span>
-        <span>{workflow.edgeCount} edges</span>
-        <span className="text-gray-700">|</span>
-        <span>v{workflow.version}</span>
-      </div>
+          <InstallCommand workflowId={workflow.id} />
 
-      {/* Actions — always above the fold */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-3">
-        <InstallButton workflow={workflow} />
-        <a
-          href={`/create?fork=${workflow.id}`}
-          className="flex-1 bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium text-center transition"
-        >
-          Fork & Edit
-        </a>
-        <a
-          href={`https://github.com/swenyai/marketplace/blob/main/${workflow.filePath}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-[#111] hover:bg-[#1a1a2e] text-gray-300 border border-[#2a2a3a] px-4 py-3 sm:py-2.5 rounded-lg text-sm text-center transition"
-        >
-          GitHub
-        </a>
-      </div>
-
-      {/* Tabs — immediately after actions */}
-      <div className="flex border-b border-[#1e1e2e] mb-3 overflow-x-auto">
-        {(["skills", ...(workflow.sampleOutput ? ["output"] : []), "yaml", "usage"] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-3 md:px-4 py-2.5 text-xs font-medium transition whitespace-nowrap ${
-              tab === t
-                ? "text-blue-400 border-b-2 border-blue-500"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            {t === "skills" ? "Skills Required" : t === "output" ? "Sample Output" : t === "yaml" ? "YAML Source" : "Usage"}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      <div className="mb-4">
-        {tab === "skills" && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[...skillNodes.entries()].map(([skill, nodes]) => {
-              const customDef = workflow.customSkills?.[skill];
-              const isCustom = !!customDef;
-              const hasMcp = !!customDef?.mcp;
-
-              return (
-                <div key={skill} className="bg-[#111] border border-[#1e1e2e] rounded-lg p-2.5">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    {isCustom ? (
-                      hasMcp ? (
-                        <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101" />
-                        </svg>
-                      ) : (
-                        <svg className="w-3.5 h-3.5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                        </svg>
-                      )
-                    ) : (
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                    )}
-                    <span className="text-xs text-gray-200 font-medium capitalize">
-                      {customDef?.name ?? skill}
-                    </span>
-                    {isCustom && (
-                      <span className={`text-[11px] px-1.5 py-0.5 rounded ${hasMcp ? "bg-purple-950/50 text-purple-400" : "bg-green-950/50 text-green-400"}`}>
-                        {hasMcp ? "MCP" : "instruction"}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-[11px] text-gray-600 break-words">
-                    {customDef?.instruction
-                      ? customDef.instruction.slice(0, 80) + (customDef.instruction.length > 80 ? "..." : "")
-                      : `Used in: ${nodes.join(", ")}`}
-                  </span>
-                </div>
-              );
-            })}
+          <div>
+            <h2 className="text-[11px] font-semibold text-text-dim uppercase tracking-[0.12em] mb-3">
+              Environment variables
+            </h2>
+            <EnvVarList variables={workflow.derivedVariables} />
           </div>
-        )}
-        {tab === "output" && workflow.sampleOutput && (
-          <div className="bg-[#111] border border-[#1e1e2e] rounded-lg p-4">
-            <div className="text-[11px] text-gray-600 mb-2 uppercase tracking-wider font-medium">Example workflow output</div>
-            <pre className="text-xs text-gray-300 whitespace-pre-wrap font-mono leading-relaxed">{workflow.sampleOutput}</pre>
+
+          <div className="flex gap-3 items-center text-[11px] text-text-dim pt-3 border-t border-border">
+            <span className="inline-flex items-center gap-1.5">
+              <span
+                className={`inline-block w-[5px] h-[5px] rounded-full ${
+                  workflow.source === "official" ? "bg-accent" : "bg-text-dim"
+                }`}
+              />
+              <span className="text-text-muted">{workflow.author}</span>
+            </span>
+            <span className="text-border">·</span>
+            <span className="font-mono">{workflow.nodeCount} nodes</span>
+            <span className="text-border">·</span>
+            <span className="font-mono">{workflow.edgeCount} edges</span>
           </div>
-        )}
-        {tab === "yaml" && <YamlViewer yaml={yamlString} />}
-        {tab === "usage" && <UsageSnippet workflow={workflow} />}
+
+          {sampleOutputHtml && (
+            <div
+              className="bg-surface border border-border rounded-md overflow-hidden"
+            >
+              <div className="text-[10px] text-text-dim tracking-wider uppercase font-medium px-4 py-2 border-b border-border bg-surface-2">
+                Example workflow output
+              </div>
+              <div
+                className="[&_pre]:!bg-transparent [&_pre]:p-4 [&_pre]:text-[12px] [&_pre]:leading-relaxed [&_pre]:overflow-x-auto [&_code]:font-mono"
+                dangerouslySetInnerHTML={{ __html: sampleOutputHtml }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN — DAG (desktop) / CTA (mobile) */}
+        <div className="lg:sticky lg:top-24 lg:self-start">
+          <div className="lg:hidden">
+            <button
+              onClick={openModal}
+              className="w-full min-h-[48px] bg-accent-bg border border-accent-border text-accent rounded-md flex items-center justify-center gap-2 text-sm font-medium transition hover:bg-accent hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <span className="font-mono">⤢</span>
+              <span>View workflow graph</span>
+            </button>
+          </div>
+          <div className="hidden lg:block card-atmosphere rounded-lg overflow-hidden marketplace-dag dag-host relative" style={{ height: "calc(100vh - 180px)", minHeight: 480 }}>
+            <button
+              onClick={openModal}
+              className="absolute top-3 right-3 z-10 text-[10px] text-accent bg-accent-bg border border-accent-border rounded px-2 py-1 uppercase tracking-wider font-medium hover:bg-accent hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              ⤢ expand
+            </button>
+            <DagViewer workflow={coreWorkflow} height="100%" nodeWidth={200} nodeHeight={70} />
+          </div>
+        </div>
       </div>
 
-      {/* Interactive DAG — visual reference, below actionable content */}
-      <div className="bg-[#08080f] border border-[#1e1e2e] rounded-xl mb-3 overflow-hidden marketplace-dag">
-        <div className="block md:hidden">
-          <DagViewer workflow={coreWorkflow} height={280} nodeWidth={160} nodeHeight={60} />
-        </div>
-        <div className="hidden md:block">
-          <DagViewer workflow={coreWorkflow} height={400} nodeWidth={200} nodeHeight={70} />
-        </div>
-      </div>
-
-      {/* Cloud CTA */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-blue-950/20 border border-blue-900/30 rounded-lg">
-        <svg className="w-4 h-4 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-        </svg>
-        <p className="text-xs text-gray-400">
-          Track this workflow&apos;s performance{" "}
-          <a
-            href="https://cloud.sweny.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-400 hover:text-blue-300 font-medium"
-          >
-            cloud.sweny.ai &rarr;
-          </a>
-        </p>
-      </div>
-    </div>
+      <DagModal open={modalOpen} onClose={closeModal} workflow={coreWorkflow} />
+    </>
   );
 }
