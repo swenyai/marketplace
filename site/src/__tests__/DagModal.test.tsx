@@ -79,4 +79,59 @@ describe("DagModal", () => {
     const closeBtn = await screen.findByRole("button", { name: /close workflow graph/i });
     expect(closeBtn).toHaveFocus();
   });
+
+  it("restores focus to the triggering element when closed", async () => {
+    // Render a trigger button outside the modal so we can verify focus is returned to it.
+    function Harness() {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <>
+          <button data-testid="trigger" onClick={() => setOpen(true)}>
+            open
+          </button>
+          <DagModal open={open} onClose={() => setOpen(false)} workflow={workflow} />
+        </>
+      );
+    }
+    const user = userEvent.setup();
+    render(<Harness />);
+    const trigger = screen.getByTestId("trigger");
+    trigger.focus();
+    await user.click(trigger);
+    // Wait for the modal's dynamic viewer so effects have run.
+    await screen.findByTestId("dag-viewer-stub");
+    expect(trigger).not.toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveFocus();
+  });
+
+  it("locks body scroll while open and restores prior overflow on close", async () => {
+    document.body.style.overflow = "auto";
+    const { rerender } = render(
+      <DagModal open={true} onClose={vi.fn()} workflow={workflow} />,
+    );
+    await screen.findByTestId("dag-viewer-stub");
+    expect(document.body.style.overflow).toBe("hidden");
+    rerender(<DagModal open={false} onClose={vi.fn()} workflow={workflow} />);
+    expect(document.body.style.overflow).toBe("auto");
+  });
+
+  it("closes when the backdrop is clicked", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(<DagModal open={true} onClose={onClose} workflow={workflow} />);
+    const dialog = await screen.findByRole("dialog");
+    await user.click(dialog);
+    expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("does not close when content inside the dialog is clicked", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(<DagModal open={true} onClose={onClose} workflow={workflow} />);
+    // The DagViewer stub is content inside the dialog, not the backdrop.
+    const stub = await screen.findByTestId("dag-viewer-stub");
+    await user.click(stub);
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
