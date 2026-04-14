@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import type { MarketplaceWorkflow } from "@/lib/types";
@@ -22,23 +22,24 @@ interface WorkflowDetailProps {
   sampleOutputHtml?: string;
 }
 
-export function WorkflowDetail({ workflow, sampleOutputHtml }: WorkflowDetailProps) {
+interface CoreWorkflow {
+  id: string;
+  name: string;
+  description: string;
+  entry: string;
+  nodes: MarketplaceWorkflow["nodes"];
+  edges: MarketplaceWorkflow["edges"];
+}
+
+function WorkflowDetailInner({
+  workflow,
+  sampleOutputHtml,
+  coreWorkflow,
+}: WorkflowDetailProps & { coreWorkflow: CoreWorkflow }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
   const [modalOpen, setModalOpen] = useState(false);
-
-  const coreWorkflow = useMemo(
-    () => ({
-      id: workflow.id,
-      name: workflow.name,
-      description: workflow.description,
-      entry: workflow.entry,
-      nodes: workflow.nodes,
-      edges: workflow.edges,
-    }),
-    [workflow]
-  );
 
   // Deep-link support: ?view=graph opens modal on mount
   useEffect(() => {
@@ -139,5 +140,29 @@ export function WorkflowDetail({ workflow, sampleOutputHtml }: WorkflowDetailPro
 
       <DagModal open={modalOpen} onClose={closeModal} workflow={coreWorkflow} />
     </>
+  );
+}
+
+export function WorkflowDetail({ workflow, sampleOutputHtml }: WorkflowDetailProps) {
+  const coreWorkflow = useMemo(
+    () => ({
+      id: workflow.id,
+      name: workflow.name,
+      description: workflow.description,
+      entry: workflow.entry,
+      nodes: workflow.nodes,
+      edges: workflow.edges,
+    }),
+    [workflow]
+  );
+
+  return (
+    <Suspense fallback={null}>
+      <WorkflowDetailInner
+        workflow={workflow}
+        sampleOutputHtml={sampleOutputHtml}
+        coreWorkflow={coreWorkflow}
+      />
+    </Suspense>
   );
 }
