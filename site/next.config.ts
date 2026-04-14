@@ -1,21 +1,16 @@
 import type { NextConfig } from "next";
-import path from "path";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["yaml"],
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // @sweny-ai/core/dist/skills/index.js uses node:fs + node:path for
-      // custom skill discovery. Replace it with a browser-safe shim that
-      // exports only the static builtin skill objects.
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        [path.resolve(__dirname, "node_modules/@sweny-ai/core/dist/skills/index.js")]:
-          path.resolve(__dirname, "src/lib/skills-browser-shim.js"),
-      };
-    }
-    return config;
-  },
+  // `@sweny-ai/core/dist/skills/index.js` imports `node:fs` + `node:path` at module
+  // scope for custom-skill discovery. That top-level import blows up Turbopack's
+  // client chunking and any browser-targeted bundler. The marketplace never uses
+  // `loadCustomSkills()` — only the static `builtinSkills` catalog.
+  //
+  // Fix applied via `postinstall` script (`scripts/patch-sweny-core.mjs`), which
+  // overwrites the offending file with the browser-safe shim at
+  // `src/lib/skills-browser-shim.js`. The patch is idempotent and backed up.
+  // That makes both webpack (build) and Turbopack (dev) work without custom aliasing.
 };
 
 export default nextConfig;
