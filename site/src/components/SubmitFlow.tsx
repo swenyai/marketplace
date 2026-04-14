@@ -74,9 +74,9 @@ export function SubmitFlow({
 
   if (tooLarge) {
     return (
-      <div className="space-y-3 bg-[#0c0c14] border border-[#1e1e2e] rounded-xl p-4">
-        <div className="text-xs text-gray-400 leading-relaxed">
-          <span className="text-gray-200 font-medium">Submit in two steps.</span>{" "}
+      <div className="space-y-3 bg-surface border border-border rounded-xl p-4">
+        <div className="text-xs text-text-muted leading-relaxed">
+          <span className="text-text font-medium">Submit in two steps.</span>{" "}
           This workflow is larger than GitHub&rsquo;s URL limit, so copy
           the YAML first, then paste it into the editor that opens.
         </div>
@@ -85,9 +85,9 @@ export function SubmitFlow({
             type="button"
             onClick={copyYaml}
             disabled={disabled}
-            className="bg-[#111] hover:bg-[#1a1a2e] disabled:opacity-50 text-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium transition border border-[#2a2a3a] flex items-center justify-center gap-2"
+            className="bg-surface hover:bg-surface-2 disabled:opacity-50 text-text px-4 py-2.5 rounded-lg text-sm font-medium transition border border-border flex items-center justify-center gap-2"
           >
-            <span className="text-gray-500 text-xs">1.</span>
+            <span className="text-text-dim text-xs">1.</span>
             <span>{copied ? "Copied" : "Copy YAML"}</span>
           </button>
           <a

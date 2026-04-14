@@ -77,7 +77,7 @@ ${envBlock}`;
     return (
       <button
         onClick={() => setOpen(true)}
-        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium transition inline-flex items-center justify-center gap-2"
+        className="flex-1 bg-accent hover:bg-accent-hover text-white px-4 py-3 sm:py-2.5 rounded-lg text-sm font-medium transition inline-flex items-center justify-center gap-2"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -88,19 +88,19 @@ ${envBlock}`;
   }
 
   return (
-    <div className="flex-1 bg-[#111] border border-[#2a2a3a] rounded-lg p-4 space-y-3">
+    <div className="flex-1 bg-surface border border-border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-gray-200">Install to GitHub</p>
+        <p className="text-sm font-medium text-text">Install to GitHub</p>
         <button
           onClick={() => setOpen(false)}
-          className="text-gray-600 hover:text-gray-400 text-xs"
+          className="text-text-dim hover:text-text-muted text-xs"
         >
           Cancel
         </button>
       </div>
 
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Repository</label>
+        <label className="text-xs text-text-dim block mb-1">Repository</label>
         <input
           ref={inputRef}
           type="text"
@@ -108,10 +108,10 @@ ${envBlock}`;
           onChange={(e) => setRepo(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="owner/repo"
-          className={`w-full bg-[#08080f] border rounded px-3 py-2 text-sm text-gray-200 placeholder-gray-700 focus:outline-none transition ${
+          className={`w-full bg-surface border rounded px-3 py-2 text-sm text-text placeholder-gray-700 focus:outline-none transition ${
             touched && !valid
               ? "border-red-800/50 focus:border-red-600"
-              : "border-[#2a2a3a] focus:border-blue-600"
+              : "border-border focus:border-accent"
           }`}
         />
         {touched && !valid && (
@@ -120,13 +120,13 @@ ${envBlock}`;
       </div>
 
       <div>
-        <label className="text-xs text-gray-500 block mb-1">Branch <span className="text-gray-700">— target for the workflow file</span></label>
+        <label className="text-xs text-text-dim block mb-1">Branch <span className="text-border">— target for the workflow file</span></label>
         <input
           type="text"
           value={branch}
           onChange={(e) => setBranch(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="w-full bg-[#08080f] border border-[#2a2a3a] rounded px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-600 transition"
+          className="w-full bg-surface border border-border rounded px-3 py-2 text-sm text-text focus:outline-none focus:border-accent transition"
         />
       </div>
 
@@ -150,8 +150,8 @@ ${envBlock}`;
             }}
             className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
               valid
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-gray-800 text-gray-600 cursor-not-allowed"
+                ? "bg-accent hover:bg-accent-hover text-white"
+                : "bg-gray-800 text-text-dim cursor-not-allowed"
             }`}
           >
             Open in GitHub
@@ -162,19 +162,19 @@ ${envBlock}`;
         )}
       </div>
 
-      <p className="text-[11px] text-gray-600 leading-relaxed">
+      <p className="text-[11px] text-text-dim leading-relaxed">
         Opens GitHub&apos;s file editor with the workflow pre-filled. You review and commit — SWEny never writes to your repo.
         After committing, add your API key to{" "}
         <a
           href={valid ? `https://github.com/${repo.trim()}/settings/secrets/actions` : "#"}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-blue-500 hover:text-blue-400"
+          className="text-accent hover:text-accent-hover"
         >
           repo secrets
         </a>
         . Track runs at{" "}
-        <a href="https://cloud.sweny.ai" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400">
+        <a href="https://cloud.sweny.ai" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
           cloud.sweny.ai
         </a>
       </p>

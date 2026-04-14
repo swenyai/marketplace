@@ -45,13 +45,13 @@ export class DagBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center p-6 gap-2">
-          <div className="text-xs text-gray-500 uppercase tracking-wider">
+          <div className="text-xs text-text-dim uppercase tracking-wider">
             {this.props.label ?? "DAG preview unavailable"}
           </div>
           <div className="text-xs text-red-400/80 font-mono max-w-md break-words">
             {this.state.error.message}
           </div>
-          <div className="text-[10px] text-gray-600 mt-2">
+          <div className="text-[10px] text-text-dim mt-2">
             The YAML may still be valid — this panel just couldn&rsquo;t
             render it.
           </div>

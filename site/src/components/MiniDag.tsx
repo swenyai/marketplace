@@ -41,7 +41,7 @@ export function MiniDag({ workflow, className = "" }: MiniDagProps) {
   });
 
   return (
-    <div className={`bg-[#08080f] rounded-md p-2 ${className}`}>
+    <div className={`bg-surface rounded-md p-2 ${className}`}>
       <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto">
         {workflow.edges.map((edge, i) => {
           const from = positions.get(edge.from);

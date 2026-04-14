@@ -11,13 +11,13 @@ export function CreateTabs() {
 
   return (
     <div>
-      <div className="flex border-b border-[#1e1e2e] mb-6 overflow-x-auto">
+      <div className="flex border-b border-border mb-6 overflow-x-auto">
         <button
           onClick={() => setTab("prompt")}
           className={`px-4 py-3 md:py-2 text-sm font-medium transition whitespace-nowrap ${
             tab === "prompt"
-              ? "text-blue-400 border-b-2 border-blue-500"
-              : "text-gray-500 hover:text-gray-300"
+              ? "text-accent border-b-2 border-accent"
+              : "text-text-dim hover:text-text-muted"
           }`}
         >
           AI Prompt
@@ -26,8 +26,8 @@ export function CreateTabs() {
           onClick={() => setTab("e2e")}
           className={`px-4 py-3 md:py-2 text-sm font-medium transition whitespace-nowrap ${
             tab === "e2e"
-              ? "text-blue-400 border-b-2 border-blue-500"
-              : "text-gray-500 hover:text-gray-300"
+              ? "text-accent border-b-2 border-accent"
+              : "text-text-dim hover:text-text-muted"
           }`}
         >
           E2E Test Wizard

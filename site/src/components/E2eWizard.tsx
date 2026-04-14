@@ -12,7 +12,7 @@ import { normalizeWorkflow } from "@/lib/normalize-workflow";
 const DagViewer = dynamic(() => import("./DagViewer"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full min-h-[400px] text-gray-600 text-sm">
+    <div className="flex items-center justify-center h-full min-h-[400px] text-text-dim text-sm">
       Loading DAG...
     </div>
   ),
@@ -155,13 +155,13 @@ export function E2eWizard() {
   return (
     <div className="space-y-6">
       {/* CLI callout */}
-      <div className="bg-blue-950/20 border border-blue-900/40 rounded-lg px-4 py-3 text-sm">
-        <p className="text-blue-300 font-medium mb-1">
+      <div className="bg-accent-bg border border-accent-border rounded-lg px-4 py-3 text-sm">
+        <p className="text-accent font-medium mb-1">
           Best results? Use the CLI.
         </p>
-        <p className="text-blue-400/70 text-xs leading-relaxed">
+        <p className="text-accent/70 text-xs leading-relaxed">
           Run{" "}
-          <code className="bg-blue-950/50 px-1.5 py-0.5 rounded text-blue-300">
+          <code className="bg-accent-bg px-1.5 py-0.5 rounded text-accent">
             sweny e2e init
           </code>{" "}
           in your project directory. It analyzes your actual codebase — routes,
@@ -172,11 +172,11 @@ export function E2eWizard() {
       </div>
 
       {/* How it works */}
-      <div className="bg-[#111] border border-[#1e1e2e] rounded-lg px-4 py-3">
-        <p className="text-xs text-gray-400 leading-relaxed">
-          <span className="text-gray-300 font-medium">How it works:</span>{" "}
+      <div className="bg-surface border border-border rounded-lg px-4 py-3">
+        <p className="text-xs text-text-muted leading-relaxed">
+          <span className="text-text font-medium">How it works:</span>{" "}
           An AI agent drives a real browser via{" "}
-          <code className="text-gray-300">agent-browser</code> — no
+          <code className="text-text">agent-browser</code> — no
           Playwright, no Cypress, no selectors. The agent reads the accessibility
           tree, clicks buttons by their labels, fills forms by their placeholders,
           and adapts when your UI changes. Each test is natural language, not
@@ -192,8 +192,8 @@ export function E2eWizard() {
               onClick={() => i <= stepIndex && setStep(s)}
               className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center transition ${
                 i <= stepIndex
-                  ? "bg-blue-600 text-white"
-                  : "bg-[#1a1a2e] text-gray-600"
+                  ? "bg-accent text-white"
+                  : "bg-surface-2 text-text-dim"
               }`}
             >
               {i + 1}
@@ -201,13 +201,13 @@ export function E2eWizard() {
             {i < steps.length - 1 && (
               <div
                 className={`w-4 md:w-8 h-0.5 ${
-                  i < stepIndex ? "bg-blue-600" : "bg-[#1a1a2e]"
+                  i < stepIndex ? "bg-accent" : "bg-surface-2"
                 }`}
               />
             )}
           </div>
         ))}
-        <span className="text-xs text-gray-600 ml-1 md:ml-2">
+        <span className="text-xs text-text-dim ml-1 md:ml-2">
           {step === "backend"
             ? "Backend"
             : step === "flows"
@@ -221,10 +221,10 @@ export function E2eWizard() {
       {/* Step 1: Backend */}
       {step === "backend" && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300">
+          <h3 className="text-sm font-medium text-text-muted">
             What backend does your app use?
           </h3>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-text-dim">
             This determines how test data is provisioned and cleaned up.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -237,12 +237,12 @@ export function E2eWizard() {
                 }}
                 className={`text-left px-4 py-3 rounded-lg border transition ${
                   backend === b.id
-                    ? "bg-blue-950/50 border-blue-700 text-blue-300"
-                    : "bg-[#111] border-[#2a2a3a] text-gray-400 hover:border-gray-600 hover:text-gray-200"
+                    ? "bg-accent-bg border-accent-border text-accent"
+                    : "bg-surface border-border text-text-muted hover:border-gray-600 hover:text-text"
                 }`}
               >
                 <div className="text-sm">{b.label}</div>
-                <div className="text-[10px] text-gray-600 mt-0.5">{b.hint}</div>
+                <div className="text-[10px] text-text-dim mt-0.5">{b.hint}</div>
               </button>
             ))}
           </div>
@@ -252,10 +252,10 @@ export function E2eWizard() {
       {/* Step 2: Flows */}
       {step === "flows" && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300">
+          <h3 className="text-sm font-medium text-text-muted">
             Which user flows should be tested?
           </h3>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-text-dim">
             Each flow becomes a test node — natural language, not code.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -265,8 +265,8 @@ export function E2eWizard() {
                 onClick={() => toggleFlow(f.id)}
                 className={`text-xs px-3 py-2.5 rounded-lg border transition text-left ${
                   selectedFlows.includes(f.id)
-                    ? "bg-blue-950/50 border-blue-700 text-blue-300"
-                    : "bg-[#111] border-[#2a2a3a] text-gray-400 hover:border-gray-600 hover:text-gray-200"
+                    ? "bg-accent-bg border-accent-border text-accent"
+                    : "bg-surface border-border text-text-muted hover:border-gray-600 hover:text-text"
                 }`}
               >
                 {f.label}
@@ -276,7 +276,7 @@ export function E2eWizard() {
           <button
             onClick={() => setStep("details")}
             disabled={selectedFlows.length === 0}
-            className="w-full bg-[#1a1a2e] hover:bg-[#222244] disabled:opacity-50 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2 border border-[#2a2a3a]"
+            className="w-full bg-surface-2 hover:bg-surface-2/80 disabled:opacity-50 text-text-muted px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2 border border-border"
           >
             Next
           </button>
@@ -286,32 +286,32 @@ export function E2eWizard() {
       {/* Step 3: App details */}
       {step === "details" && (
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-300">
+          <h3 className="text-sm font-medium text-text-muted">
             Tell us about your app
           </h3>
           <div className="space-y-3">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">App name</label>
+              <label className="text-xs text-text-dim mb-1 block">App name</label>
               <input
                 value={appName}
                 onChange={(e) => setAppName(e.target.value)}
                 placeholder="e.g. MyApp, Acme Dashboard"
-                className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
+                className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-accent"
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Base URL</label>
+              <label className="text-xs text-text-dim mb-1 block">Base URL</label>
               <input
                 value={appUrl}
                 onChange={(e) => setAppUrl(e.target.value)}
                 placeholder="e.g. https://myapp.com"
-                className="w-full bg-[#111] border border-[#2a2a3a] rounded-lg px-3 py-2 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600"
+                className="w-full bg-surface border border-border rounded-lg px-3 py-2 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-accent"
               />
             </div>
           </div>
           <button
             onClick={() => setStep("review")}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2"
+            className="w-full bg-accent hover:bg-accent-hover text-white px-4 py-2.5 rounded-lg text-sm font-medium transition mt-2"
           >
             Generate Workflow
           </button>
@@ -323,23 +323,23 @@ export function E2eWizard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
             {/* Summary */}
-            <div className="bg-[#111] border border-[#1e1e2e] rounded-lg p-3 space-y-1.5">
-              <div className="text-xs text-gray-500">
-                <span className="text-gray-300">App:</span>{" "}
+            <div className="bg-surface border border-border rounded-lg p-3 space-y-1.5">
+              <div className="text-xs text-text-dim">
+                <span className="text-text-muted">App:</span>{" "}
                 {appName || "My App"} ({appUrl || "https://myapp.com"})
               </div>
-              <div className="text-xs text-gray-500">
-                <span className="text-gray-300">Backend:</span>{" "}
+              <div className="text-xs text-text-dim">
+                <span className="text-text-muted">Backend:</span>{" "}
                 {BACKENDS.find((b) => b.id === backend)?.label}
               </div>
-              <div className="text-xs text-gray-500">
-                <span className="text-gray-300">Flows:</span>{" "}
+              <div className="text-xs text-text-dim">
+                <span className="text-text-muted">Flows:</span>{" "}
                 {selectedFlows
                   .map((id) => FLOWS.find((f) => f.id === id)?.label)
                   .join(", ")}
               </div>
-              <div className="text-xs text-gray-500">
-                <span className="text-gray-300">Pattern:</span>{" "}
+              <div className="text-xs text-text-dim">
+                <span className="text-text-muted">Pattern:</span>{" "}
                 setup → provision → {selectedFlows.length} test(s) → cleanup → report
               </div>
             </div>
@@ -349,7 +349,7 @@ export function E2eWizard() {
               <button
                 onClick={generate}
                 disabled={generating}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-900 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
+                className="w-full bg-accent hover:bg-accent-hover disabled:bg-accent/50 disabled:cursor-not-allowed text-white px-4 py-3 rounded-lg text-sm font-medium transition flex items-center justify-center gap-2"
               >
                 {generating ? (
                   <>
@@ -393,10 +393,10 @@ export function E2eWizard() {
             {/* Streaming status + regenerate button while yaml is present */}
             {yaml && (
               <div className="flex items-center justify-between gap-2">
-                <div className="text-xs text-gray-500 flex items-center gap-2">
+                <div className="text-xs text-text-dim flex items-center gap-2">
                   {generating ? (
                     <>
-                      <span className="w-3 h-3 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+                      <span className="w-3 h-3 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
                       <span>Streaming workflow...</span>
                     </>
                   ) : valid === true ? (
@@ -408,7 +408,7 @@ export function E2eWizard() {
                 {!generating && (
                   <button
                     onClick={generate}
-                    className="text-xs text-gray-500 hover:text-gray-300 border border-[#2a2a3a] hover:border-gray-600 px-3 py-1.5 rounded transition"
+                    className="text-xs text-text-dim hover:text-text-muted border border-border hover:border-gray-600 px-3 py-1.5 rounded transition"
                   >
                     Regenerate
                   </button>
@@ -428,16 +428,16 @@ export function E2eWizard() {
           </div>
 
           {/* Live DAG */}
-          <div className="dag-host bg-[#08080f] border border-[#1e1e2e] rounded-xl overflow-hidden min-h-[400px]">
+          <div className="dag-host bg-surface border border-border rounded-xl overflow-hidden min-h-[400px]">
             {workflow ? (
               <DagBoundary>
                 <DagViewer workflow={workflow} height="100%" />
               </DagBoundary>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-gray-600 text-sm gap-3 p-6 text-center">
+              <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-text-dim text-sm gap-3 p-6 text-center">
                 {generating ? (
                   <>
-                    <span className="w-6 h-6 rounded-full border-2 border-blue-500/30 border-t-blue-500 animate-spin" />
+                    <span className="w-6 h-6 rounded-full border-2 border-accent/30 border-t-accent animate-spin" />
                     <span>Building DAG from streaming workflow...</span>
                   </>
                 ) : (

@@ -11,7 +11,7 @@ import { normalizeWorkflow } from "@/lib/normalize-workflow";
 const DagViewer = dynamic(() => import("./DagViewer"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full min-h-[400px] text-gray-600 text-sm">
+    <div className="flex items-center justify-center h-full min-h-[400px] text-text-dim text-sm">
       Loading DAG...
     </div>
   ),
@@ -130,12 +130,12 @@ export function CreatePrompt() {
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe what your workflow should do..."
               rows={3}
-              className="w-full bg-[#111] border border-[#2a2a3a] rounded-xl px-4 py-3 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-blue-600 resize-none"
+              className="w-full bg-surface border border-border rounded-xl px-4 py-3 text-sm text-text placeholder:text-text-dim focus:outline-none focus:border-accent resize-none"
             />
             <button
               type="submit"
               disabled={generating || !prompt.trim()}
-              className="absolute bottom-3 right-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
+              className="absolute bottom-3 right-3 bg-accent hover:bg-accent-hover disabled:opacity-50 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition"
             >
               {generating ? "Generating..." : "Generate"}
             </button>
@@ -145,7 +145,7 @@ export function CreatePrompt() {
         {/* Example prompts */}
         {!yaml && !generating && (
           <div className="space-y-2">
-            <p className="text-xs text-gray-600">Try an example:</p>
+            <p className="text-xs text-text-dim">Try an example:</p>
             {EXAMPLE_PROMPTS.map((ex) => (
               <button
                 key={ex}
@@ -153,7 +153,7 @@ export function CreatePrompt() {
                   setPrompt(ex);
                   generate(ex);
                 }}
-                className="block w-full text-left text-xs text-gray-500 hover:text-blue-400 bg-[#111] border border-[#1e1e2e] rounded-lg px-3 py-2 transition"
+                className="block w-full text-left text-xs text-text-dim hover:text-accent bg-surface border border-border rounded-lg px-3 py-2 transition"
               >
                 {ex}
               </button>
@@ -190,13 +190,13 @@ export function CreatePrompt() {
       </div>
 
       {/* Right: Live DAG preview */}
-      <div className="dag-host bg-[#08080f] border border-[#1e1e2e] rounded-xl overflow-hidden">
+      <div className="dag-host bg-surface border border-border rounded-xl overflow-hidden">
         {workflow ? (
           <DagBoundary>
             <DagViewer workflow={workflow} height="100%" />
           </DagBoundary>
         ) : (
-          <div className="flex items-center justify-center h-full min-h-[400px] text-gray-600 text-sm">
+          <div className="flex items-center justify-center h-full min-h-[400px] text-text-dim text-sm">
             {generating ? "Building DAG..." : "DAG preview will appear here"}
           </div>
         )}
