@@ -1,60 +1,93 @@
 @import "tailwindcss";
 
-/* Hide React Flow attribution watermark and minimap in DAG viewer */
-.react-flow__attribution,
-.react-flow__minimap {
-  display: none !important;
+@theme {
+  /* Colors — dark mode default */
+  --color-bg: #050505;
+  --color-surface: #0a0a0a;
+  --color-surface-2: #18181b;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-text: #fafafa;
+  --color-text-muted: #a1a1aa;
+  --color-text-dim: #71717a;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #60a5fa;
+  --color-accent-bg: rgba(59, 130, 246, 0.12);
+  --color-accent-border: rgba(59, 130, 246, 0.4);
+
+  /* Fonts (wired up in layout.tsx) */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  /* Spacing unchanged — Tailwind 4 defaults are already 4px-based */
 }
 
-/* Compact DAG in marketplace: scale the entire viewport down uniformly */
-.marketplace-dag .react-flow__viewport {
-  transform-origin: 0 0;
-}
-
-/* Tighter text in nodes */
-.marketplace-dag .react-flow__node {
-  font-size: 11px !important;
-}
-
-@media (max-width: 768px) {
-  .marketplace-dag .react-flow__node {
-    font-size: 10px !important;
+/* Light theme override */
+@media (prefers-color-scheme: light) {
+  @theme inline {
+    --color-bg: #ffffff;
+    --color-surface: #fafafa;
+    --color-surface-2: #f4f4f5;
+    --color-border: #e4e4e7;
+    --color-text: #09090b;
+    --color-text-muted: #52525b;
+    --color-text-dim: #71717a;
+    --color-accent: #2563eb;
+    --color-accent-hover: #1d4ed8;
+    --color-accent-bg: rgba(37, 99, 235, 0.10);
+    --color-accent-border: rgba(37, 99, 235, 0.35);
   }
 }
 
-/* Compact edge labels */
-.marketplace-dag .react-flow__edge-text {
-  font-size: 9px !important;
+/* Card atmosphere — dark-only gradient, light uses solid */
+.card-atmosphere {
+  background:
+    radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.08), transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(56, 189, 248, 0.04), transparent 50%),
+    var(--color-surface);
+  border: 1px solid var(--color-border);
+  position: relative;
 }
 
-/* Prevent horizontal overflow on the page from DAG panning */
-.marketplace-dag {
-  touch-action: pan-y pinch-zoom;
+@media (prefers-color-scheme: light) {
+  .card-atmosphere {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  }
 }
 
-.marketplace-dag .react-flow__edge-textbg {
-  rx: 4;
-  ry: 4;
+/* Scrollbar styling — thin, theme-aware */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
 }
 
-/* Smaller controls */
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+
+/* React Flow overrides preserved from current */
+.react-flow__attribution,
+.react-flow__minimap { display: none !important; }
+
+.marketplace-dag .react-flow__node { font-size: 11px !important; }
+@media (max-width: 768px) {
+  .marketplace-dag .react-flow__node { font-size: 10px !important; }
+}
+.marketplace-dag .react-flow__edge-text { font-size: 9px !important; }
+.marketplace-dag { touch-action: pan-y pinch-zoom; }
+.marketplace-dag .react-flow__edge-textbg { rx: 4; ry: 4; }
 .marketplace-dag .react-flow__controls {
   transform: scale(0.85);
   transform-origin: bottom left;
 }
 
-/*
- * The @sweny-ai/studio viewer renders layout errors as an inline-styled
- * div with a light-theme background (#fef2f2). Those inline styles can't
- * be overridden from React, so we patch them via CSS attribute selectors
- * scoped to our dag-host wrapper. Belt-and-suspenders alongside the
- * normalizeWorkflow() guard that prevents most layout failures.
- */
+/* Studio viewer error theming preserved */
 .dag-host div[style*="rgb(254, 242, 242)"],
 .dag-host div[style*="#fef2f2"] {
   background: transparent !important;
   color: rgb(248, 113, 113) !important;
-  font-family: ui-monospace, monospace;
+  font-family: var(--font-mono);
 }
 .dag-host div[style*="rgb(254, 242, 242)"] code,
 .dag-host div[style*="#fef2f2"] code {
