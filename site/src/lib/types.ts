@@ -11,6 +11,8 @@ export interface DerivedVariable {
   description: string;
   required: boolean;
   skill: string;
+  /** Other env vars that satisfy the same requirement (e.g. OAuth token in place of API key) */
+  alternatives?: string[];
 }
 
 /**

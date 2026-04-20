@@ -16,14 +16,20 @@ const VALID_CATEGORIES = new Set<string>([
 
 /**
  * Derive required environment variables from a workflow's skills.
- * Always includes ANTHROPIC_API_KEY first.
+ * Always includes ANTHROPIC_API_KEY first (with CLAUDE_CODE_OAUTH_TOKEN as an alternative).
  * Merges with manual variables from YAML (if any) for override descriptions.
  */
 function deriveVariables(skillIds: string[], manualVars?: Array<{ name: string; description?: string; required?: boolean }>): DerivedVariable[] {
   const vars: DerivedVariable[] = [
-    { name: "ANTHROPIC_API_KEY", description: "Anthropic API key for Claude", required: true, skill: "core" },
+    {
+      name: "ANTHROPIC_API_KEY",
+      description: "Anthropic API key for Claude — or use CLAUDE_CODE_OAUTH_TOKEN to authenticate with a Claude Code subscription",
+      required: true,
+      skill: "core",
+      alternatives: ["CLAUDE_CODE_OAUTH_TOKEN"],
+    },
   ];
-  const seen = new Set<string>(["ANTHROPIC_API_KEY"]);
+  const seen = new Set<string>(["ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"]);
 
   // Build a lookup from manual variables for description overrides
   const manualLookup = new Map<string, { description?: string; required?: boolean }>();

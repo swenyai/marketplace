@@ -10,9 +10,15 @@ import type { DerivedVariable } from "@/lib/types";
 // (it runs at build time in Node, not in the browser)
 function deriveVariables(skillIds: string[]): DerivedVariable[] {
   const vars: DerivedVariable[] = [
-    { name: "ANTHROPIC_API_KEY", description: "Anthropic API key for Claude", required: true, skill: "core" },
+    {
+      name: "ANTHROPIC_API_KEY",
+      description: "Anthropic API key for Claude — or use CLAUDE_CODE_OAUTH_TOKEN to authenticate with a Claude Code subscription",
+      required: true,
+      skill: "core",
+      alternatives: ["CLAUDE_CODE_OAUTH_TOKEN"],
+    },
   ];
-  const seen = new Set<string>(["ANTHROPIC_API_KEY"]);
+  const seen = new Set<string>(["ANTHROPIC_API_KEY", "CLAUDE_CODE_OAUTH_TOKEN"]);
   for (const skillId of skillIds) {
     const fields = SKILL_CONFIG[skillId];
     if (!fields) continue;

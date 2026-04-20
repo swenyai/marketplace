@@ -45,6 +45,12 @@ function renderVar(v: DerivedVariable) {
     <div key={v.name} className="bg-surface border border-border rounded-md p-3">
       <div className="flex items-center gap-2 mb-1 flex-wrap">
         <code className="font-mono text-[12px] text-text font-medium">{v.name}</code>
+        {v.alternatives?.map((alt) => (
+          <span key={alt} className="inline-flex items-center gap-1.5 text-[12px] text-text-muted">
+            <span className="text-text-dim">or</span>
+            <code className="font-mono text-text-muted">{alt}</code>
+          </span>
+        ))}
         {v.required ? (
           <span className="text-[10px] text-accent bg-accent-bg px-1.5 py-0.5 rounded font-medium tracking-wide">
             required
