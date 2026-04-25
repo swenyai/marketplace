@@ -1,3 +1,5 @@
+# marketplace.workflow_type: monitor
+# marketplace.category: community
 id: security-audit
 name: Security Audit
 description: Scan project dependencies for known CVEs, check for OWASP top 10 issues in code, generate a security report, and create issues for critical findings

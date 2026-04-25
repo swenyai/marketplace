@@ -1,3 +1,5 @@
+# marketplace.workflow_type: monitor
+# marketplace.category: community
 id: deploy-guard
 name: Deploy Guard
 description: Run pre-deployment checks including database migration safety, environment variable drift detection, and rollback readiness verification

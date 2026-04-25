@@ -1,3 +1,5 @@
+# marketplace.workflow_type: generic
+# marketplace.category: community
 id: dependency-updater
 name: Dependency Updater
 description: Scan for outdated dependencies, assess breaking changes, create update branches, run tests with retry on failure, and open PRs for safe updates

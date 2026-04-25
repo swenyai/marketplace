@@ -1,3 +1,5 @@
+# marketplace.workflow_type: monitor
+# marketplace.category: community
 id: data-pipeline-monitor
 name: Data Pipeline Monitor
 description: Monitor data pipeline health — check freshness, volume anomalies, schema drift, and quality metrics — with conditional escalation based on severity

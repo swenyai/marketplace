@@ -1,3 +1,5 @@
+# marketplace.workflow_type: content_generation
+# marketplace.category: official
 id: incident-postmortem
 name: Incident Postmortem
 description: Generate a thorough, blameless postmortem after an incident — gathers timeline, drafts the document, uses an LLM judge to evaluate quality, and iterates until it meets the bar

@@ -1,3 +1,5 @@
+# marketplace.workflow_type: pr_review
+# marketplace.category: community
 id: doc-quality-gate
 name: Documentation Quality Gate
 description: Generate or update documentation from code changes, use an LLM judge to evaluate completeness and accuracy, iterate until quality bar is met, then publish

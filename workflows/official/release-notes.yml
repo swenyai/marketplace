@@ -1,3 +1,5 @@
+# marketplace.workflow_type: content_generation
+# marketplace.category: official
 id: release-notes
 name: Release Notes Generator
 description: Generate polished release notes from commits and PRs — categorize changes, draft user-facing notes, use an LLM judge for quality, and publish to multiple channels

@@ -1,3 +1,5 @@
+# marketplace.workflow_type: content_generation
+# marketplace.category: community
 id: onboarding-guide
 name: Developer Onboarding Guide
 description: Generate a personalized onboarding guide for new developers — analyze the codebase architecture, identify key patterns, create learning paths, and produce a comprehensive starter document
