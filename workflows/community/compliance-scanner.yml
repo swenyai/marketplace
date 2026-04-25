@@ -1,3 +1,5 @@
+# marketplace.workflow_type: monitor
+# marketplace.category: community
 id: compliance-scanner
 name: Compliance Scanner
 description: Scan code for compliance violations across multiple domains in parallel — secrets, licenses, PII handling, accessibility — then generate a compliance report with remediation priorities

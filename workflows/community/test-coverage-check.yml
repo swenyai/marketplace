@@ -1,3 +1,5 @@
+# marketplace.workflow_type: e2e_test
+# marketplace.category: community
 id: test-coverage-check
 name: Test Coverage Check
 description: Analyze test coverage across the codebase, identify untested critical paths, and generate test stubs for uncovered functions

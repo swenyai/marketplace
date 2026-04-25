@@ -1,3 +1,5 @@
+# marketplace.workflow_type: generic
+# marketplace.category: official
 id: implement
 name: Implement Fix
 description: Implement a code fix for an issue and open a pull request

@@ -1,3 +1,5 @@
+# marketplace.workflow_type: e2e_test
+# marketplace.category: community
 id: bug-reproducer
 name: Bug Reproducer
 description: Read a bug report, write a failing test that reproduces the bug, iterate until the test reliably demonstrates the issue, then report findings with reproduction steps

@@ -1,3 +1,5 @@
+# marketplace.workflow_type: content_generation
+# marketplace.category: community
 id: changelog-generator
 name: Changelog Generator
 description: Generate a changelog from recent commits and merged PRs, categorize changes by type, and create a draft release

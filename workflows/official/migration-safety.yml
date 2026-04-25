@@ -1,3 +1,5 @@
+# marketplace.workflow_type: pr_review
+# marketplace.category: official
 id: migration-safety
 name: Migration Safety Check
 description: Run parallel safety checks on database migrations — schema analysis, data impact assessment, and rollback verification — then converge to a go/no-go decision

@@ -1,3 +1,5 @@
+# marketplace.workflow_type: pr_review
+# marketplace.category: community
 id: pr-review-bot
 name: PR Review Bot
 description: Automatically review pull requests for code style violations, missing tests, documentation gaps, and breaking API changes

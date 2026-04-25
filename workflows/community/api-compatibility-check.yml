@@ -1,3 +1,5 @@
+# marketplace.workflow_type: pr_review
+# marketplace.category: community
 id: api-compatibility-check
 name: API Compatibility Check
 description: Analyze API changes across versions for backwards compatibility — parallel checks for REST endpoints, types/schemas, and behavior changes — then generate a migration guide
