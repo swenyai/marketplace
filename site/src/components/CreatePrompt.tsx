@@ -6,6 +6,7 @@ import { parse } from "yaml";
 import { YamlViewer } from "./YamlViewer";
 import { SubmitFlow } from "./SubmitFlow";
 import { DagBoundary } from "./DagBoundary";
+import { CreditsExhaustedNotice } from "./CreditsExhaustedNotice";
 import { normalizeWorkflow } from "@/lib/normalize-workflow";
 
 const DagViewer = dynamic(() => import("./DagViewer"), {
@@ -31,6 +32,8 @@ export function CreatePrompt() {
   const [generating, setGenerating] = useState(false);
   const [valid, setValid] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [lastPrompt, setLastPrompt] = useState("");
   const abortRef = useRef<AbortController | null>(null);
 
   const workflow = useMemo(() => {
@@ -54,6 +57,8 @@ export function CreatePrompt() {
       setGenerating(true);
       setValid(null);
       setErrors([]);
+      setErrorCode(null);
+      setLastPrompt(text);
       setYaml("");
 
       try {
@@ -69,6 +74,7 @@ export function CreatePrompt() {
 
         if (!res.ok) {
           const err = await res.json();
+          setErrorCode(err.code ?? null);
           setErrors([err.error ?? "Generation failed"]);
           setGenerating(false);
           return;
@@ -158,6 +164,22 @@ export function CreatePrompt() {
                 {ex}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* Out-of-credits fallback to local CLI */}
+        {errorCode === "insufficient_credits" && (
+          <CreditsExhaustedNotice
+            command="npx sweny new"
+            onRetry={() => generate(lastPrompt)}
+            retrying={generating}
+          />
+        )}
+
+        {/* Generic generation error (non-credits) */}
+        {errorCode !== "insufficient_credits" && errors.length > 0 && valid === null && (
+          <div className="text-xs px-3 py-2 rounded-lg bg-red-950/30 text-red-400 border border-red-900/50">
+            {errors.join(", ")}
           </div>
         )}
 

@@ -11,8 +11,16 @@ const rateLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000, // 1 hour
 });
 
-function jsonError(status: number, error: string, extraHeaders?: HeadersInit) {
-  return Response.json({ error }, { status, headers: extraHeaders });
+function jsonError(
+  status: number,
+  error: string,
+  extraHeaders?: HeadersInit,
+  code?: string
+) {
+  return Response.json(code ? { error, code } : { error }, {
+    status,
+    headers: extraHeaders,
+  });
 }
 
 function buildSystemPrompt(): string {
@@ -90,7 +98,7 @@ export async function POST(request: Request) {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-sonnet-4-6",
         max_tokens: 4096,
         stream: true,
         system: systemPrompt,
@@ -106,6 +114,17 @@ export async function POST(request: Request) {
     // Intentionally do NOT log the response body — it may echo auth
     // headers or token fragments from upstream.
     console.error(`AI Gateway error: status=${response.status}`);
+    // 402 = the gateway's hosted credits are exhausted. Surface a distinct
+    // code so the client can offer the local-CLI fallback instead of a
+    // generic failure.
+    if (response.status === 402) {
+      return jsonError(
+        402,
+        "Our hosted free tier is out of credits right now. You can still build this workflow locally with the SWEny CLI.",
+        undefined,
+        "insufficient_credits"
+      );
+    }
     return jsonError(502, "AI generation failed");
   }
 

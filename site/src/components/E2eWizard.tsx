@@ -7,6 +7,7 @@ import { YamlViewer } from "./YamlViewer";
 import { SubmitFlow } from "./SubmitFlow";
 import { DagBoundary } from "./DagBoundary";
 import { buildE2ePrompt, slugify } from "./e2e-prompt";
+import { CreditsExhaustedNotice } from "./CreditsExhaustedNotice";
 import { normalizeWorkflow } from "@/lib/normalize-workflow";
 
 const DagViewer = dynamic(() => import("./DagViewer"), {
@@ -48,6 +49,7 @@ export function E2eWizard() {
   const [yaml, setYaml] = useState("");
   const [valid, setValid] = useState<boolean | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
   // Abort any in-flight generation on unmount so we don't setState
@@ -82,6 +84,7 @@ export function E2eWizard() {
     setGenerating(true);
     setValid(null);
     setErrors([]);
+    setErrorCode(null);
     setYaml("");
 
     const flowLabels = selectedFlows
@@ -108,6 +111,7 @@ export function E2eWizard() {
 
       if (!res.ok) {
         const err = await res.json();
+        setErrorCode(err.code ?? null);
         setErrors([err.error ?? "Generation failed"]);
         setGenerating(false);
         return;
@@ -162,7 +166,7 @@ export function E2eWizard() {
         <p className="text-accent/70 text-xs leading-relaxed">
           Run{" "}
           <code className="bg-accent-bg px-1.5 py-0.5 rounded text-accent">
-            sweny e2e init
+            sweny new e2e
           </code>{" "}
           in your project directory. It analyzes your actual codebase — routes,
           auth patterns, API endpoints — and generates a workflow that fits your
@@ -362,8 +366,18 @@ export function E2eWizard() {
               </button>
             )}
 
+            {/* Out-of-credits fallback to local CLI */}
+            {errorCode === "insufficient_credits" && (
+              <CreditsExhaustedNotice
+                command="npx sweny new e2e"
+                message="Our hosted free tier ran out of credits. The CLI generates a sharper E2E workflow anyway — it inspects your actual codebase. No account required."
+                onRetry={generate}
+                retrying={generating}
+              />
+            )}
+
             {/* Error display — shows regardless of valid state */}
-            {errors.length > 0 && (
+            {errorCode !== "insufficient_credits" && errors.length > 0 && (
               <div className="bg-red-950/30 border border-red-900/50 rounded-lg p-3 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-red-400 font-medium">
                   <span>Generation failed</span>
