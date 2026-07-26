@@ -164,14 +164,12 @@ describe("InstallButton", () => {
 
   it("does not advertise the unreleased cloud dashboard", async () => {
     const user = userEvent.setup();
-    render(<InstallButton workflow={MOCK_WORKFLOW} />);
+    const { container } = render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
 
     expect(screen.queryByText("cloud.sweny.ai")).not.toBeInTheDocument();
-    expect(
-      document.querySelector('a[href*="cloud.sweny.ai"]'),
-    ).toBeNull();
+    expect(container.querySelector('a[href*="cloud.sweny.ai"]')).toBeNull();
   });
 
   it("generates valid GitHub Actions YAML with correct permissions", async () => {
