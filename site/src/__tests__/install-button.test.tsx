@@ -162,14 +162,16 @@ describe("InstallButton", () => {
     expect(screen.getByText(/SWEny never writes to your repo/)).toBeInTheDocument();
   });
 
-  it("links to cloud.sweny.ai for run tracking", async () => {
+  it("does not advertise the unreleased cloud dashboard", async () => {
     const user = userEvent.setup();
     render(<InstallButton workflow={MOCK_WORKFLOW} />);
 
     await user.click(screen.getByText("Install to Repo"));
 
-    const cloudLink = screen.getByText("cloud.sweny.ai");
-    expect(cloudLink).toHaveAttribute("href", "https://cloud.sweny.ai");
+    expect(screen.queryByText("cloud.sweny.ai")).not.toBeInTheDocument();
+    expect(
+      document.querySelector('a[href*="cloud.sweny.ai"]'),
+    ).toBeNull();
   });
 
   it("generates valid GitHub Actions YAML with correct permissions", async () => {

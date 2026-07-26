@@ -56,8 +56,8 @@ export default function RootLayout({
                 SWE<span className="text-accent">ny</span> Workflows
               </span>
               <div className="flex items-center gap-6 text-xs text-text-dim">
-                <a href="https://cloud.sweny.ai" target="_blank" rel="noopener noreferrer" className="hover:text-accent-hover transition">
-                  Dashboard
+                <a href="https://docs.sweny.ai" target="_blank" rel="noopener noreferrer" className="hover:text-accent-hover transition">
+                  Docs
                 </a>
                 <a href="https://spec.sweny.ai" target="_blank" rel="noopener noreferrer" className="hover:text-accent-hover transition">
                   Spec

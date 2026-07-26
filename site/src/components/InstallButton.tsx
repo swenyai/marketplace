@@ -173,10 +173,7 @@ ${envBlock}`;
         >
           repo secrets
         </a>
-        . Track runs at{" "}
-        <a href="https://cloud.sweny.ai" target="_blank" rel="noopener noreferrer" className="text-accent hover:text-accent-hover">
-          cloud.sweny.ai
-        </a>
+        .
       </p>
     </div>
   );
